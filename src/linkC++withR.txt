@@ -1,0 +1,10 @@
+#on command line, run:
+
+R CMD COMPILE mbart.cpp BirthDeath.cpp ChangeRule.cpp Funs.cpp Lib.cpp Likelihood.cpp List.cpp MuS.cpp Node.cpp Prior.cpp Rlob.cpp Swap.cpp
+R CMD SHLIB mbart.cpp BirthDeath.cpp ChangeRule.cpp Funs.cpp Lib.cpp Likelihood.cpp List.cpp MuS.cpp Node.cpp Prior.cpp Rlob.cpp Swap.cpp
+
+
+#in R, run
+
+dyn.load("mbart.so")
+
