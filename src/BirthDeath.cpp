@@ -62,7 +62,7 @@ double DrNogNode(Node *top,Node **n)
 
 
 int DrNode(Node *top,Node **node, double *nprob)
-//draw from from the set of bottom nodes such that a birth is possible
+//draw from the set of bottom nodes such that a birth is possible
 //returns 0 is no bots can grow, 1 otherwise
 //top: top of tree
 //node: pointer to drawn bottom node

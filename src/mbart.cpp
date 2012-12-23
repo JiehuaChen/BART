@@ -59,7 +59,8 @@ int *Ivec;
 double pBD;
 double pSwap;
 double pChange;
-
+FILE *datafile;
+char fileName[ 20 ] ;
 
 CPriParams PriParams;
 EndNodeModel* endNodeModel=0;
@@ -76,8 +77,9 @@ void mbart(int *iNumObs, int *iNumX, int *inrowTest,
 	   int *iprintevery, int *ikeepevery, int *ikeeptrainfits,
 	   int *inumcut, int *iusequants, int *iprintcutoffs,
 	   int *verbose,
-	   double *sdraw, double *trdraw, double *tedraw, int *vcdraw)
+	   double *sdraw, double *trdraw, double *tedraw, int *vcdraw, int *tsdraw)
 {
+   Rprintf("\n\nStrat\n\n");
    GetRNGstate();
 
    bool binary = (*ibinary_offset > -1000.0);
@@ -163,7 +165,8 @@ void mbart(int *iNumObs, int *iNumX, int *inrowTest,
    YDat = Lib::almat(NumObs,NumY); //note: for binary y this the 0-1 y (never changes), for continuous never used
    YDat1 = new double[NumObs+1];//used for resids in backfitting
    double *Y = new double[NumObs+1];//used for y in numeric, latent - binary_offset for binary y
-
+	
+  // read in data
    int tcnt = 0;
    for(int j=1;j<=NumX;j++) {
       for(int i=1;i<=NumObs;i++) {
@@ -194,6 +197,8 @@ void mbart(int *iNumObs, int *iNumX, int *inrowTest,
    for(int i=1;i<=NumX;i++) VarType[i]=ORD;
    weights = new double[NumObs+1];
    for(int i=1;i<=NumObs;i++) weights[i]=1.0;
+
+ // cutting points: what is dp?
    RuleNum = new int[NumX+1];
    RuleMat = new dp [NumX+1];
 
@@ -270,12 +275,13 @@ void mbart(int *iNumObs, int *iNumX, int *inrowTest,
       }
    }
    */
-
+   // post of node values
    MuS mu;
    mu.setSigma(sigma);
    mu.setPriorS(musig);
    endNodeModel = &mu;
 
+  // post of sigma
    Sdev sd;
    sd.setPrior(sigdf,lambda);
 
@@ -316,12 +322,14 @@ void mbart(int *iNumObs, int *iNumX, int *inrowTest,
    std::vector<int> varcnt; //store var counts, each draw
    typedef std::vector<int>::size_type ivs;
    int vcnt=0;    // count draws of var counts
+   int sdnt=0;    // count draws of tree sizes
    int inc=1;
    double mone=-1.0;
    double pone=1.0;
    double *onev = new double[NTree+1];
    for(int k=1;k<=NTree;k++) onev[k]=1.0;
    
+
    time_t tp;
    int time1 = time(&tp);
 
@@ -329,17 +337,27 @@ void mbart(int *iNumObs, int *iNumX, int *inrowTest,
    for (int k=1;k<=ndPost;k++) {
       //if(k%printevery== 0) std::cout << "iteration: " << k << " (of " << ndPost << ")" << std::endl;
       if(*verbose && (k%printevery== 0)) Rprintf("iteration: %d (of %d)\n",k,ndPost);
-      for(nvs i=1;i<theTrees.size();i++) {
+       int treen=0;  
+	for(nvs i=1;i<theTrees.size();i++) {
          //for(int j=1;j<=NumObs;j++) {
             //YDat1[j] = Y[j]-mtotalfit[j]+mtrainFits[i][j];
          //}
+		 treen++;
          F77_CALL(dcopy)(&NumObs,Y+1,&inc,YDat1+1,&inc); //copy Y into YDat1
          F77_CALL(daxpy)(&NumObs,&mone,mtotalfit+1,&inc,YDat1+1,&inc); //subtract mtotalfit from YDat1
          F77_CALL(daxpy)(&NumObs,&pone,mtrainFits[i]+1,&inc,YDat1+1,&inc);//add mtrainFits[i]
-	 alpha =  Metrop(&theTrees[i],&Done,&step);
+	    alpha =  Metrop(&theTrees[i],&Done,&step);
 
-	 if(k%keepevery==0)
+		// JC added this
+	 if(k%keepevery==0){		
+			sprintf(fileName, "MCMC%i", k);
+			datafile = fopen( fileName, "a+t" ) ;
             theTrees[i]->currentFits(&mu,NumObs,XDat,YDat1,nrowTest,XTest,weights,mfits);
+			fprintf(datafile, " Tree%d", treen);
+			fprintf(datafile,"\n");
+			theTrees[i]->PrintTree(datafile);
+			fclose (datafile);
+	}
 	 else
             theTrees[i]->currentFits(&mu,NumObs,XDat,YDat1,0,XTest,weights,mfits);
 
@@ -386,6 +404,7 @@ void mbart(int *iNumObs, int *iNumX, int *inrowTest,
          if(!binary) sdraw[scnt] = sd.getS(); scnt++;
          countVarUsage(theTrees,varcnt);
          for(int i=1;i<=NumX;i++) { vcdraw[vcnt] = varcnt[i]; vcnt++;} 
+		for(int i=1;i<=NTree;i++) { tsdraw[sdnt] = theTrees[i]->NumBotNodes(); sdnt++;}
       }
    }
    int time2 = time(&tp);

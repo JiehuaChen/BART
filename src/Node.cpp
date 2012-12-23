@@ -220,7 +220,7 @@ void Node::PrintTree()
 	int d;
 
 	d=Depth(this);
-
+	printf(" Depth:%d",d);
 	for(i=1;i<=d;i++) printf(" ");
 
 	//printf("node:%X",this);
@@ -255,17 +255,17 @@ void Node::PrintTree(FILE *out)
 	int d;
 
 	d=Depth(this);
-
+	fprintf(out, " Depth:%d",d);
 	for(i=1;i<=d;i++) fprintf(out," ");
 
 
-	std::cout << "node:" << this;
+//	std::cout << "node:" << this;
 	fprintf(out,"node:%X",1);
 	fprintf(out," n:%d",DataList.length);
 	fprintf(out," TBN: %d%d%d",Top,Bot,Nog);
-	fprintf(out," Avail:");
-	for(i=1;i<=NumX;i++) fprintf(out,"%d",VarAvail[i]);
-	if(!Top) fprintf(out,"parent:%X ",2);
+//	fprintf(out," Avail:");
+//	for(i=1;i<=NumX;i++) fprintf(out,"%d",VarAvail[i]);
+//	if(!Top) fprintf(out,"parent:%X ",2);
 	if(!Bot) {
 		fprintf(out," Var:%d ",rule.Var);
 		if(VarType[rule.Var]==CAT) {

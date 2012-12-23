@@ -111,7 +111,7 @@ bart = function(
                    sdraw=double(nctot), 
                    trdraw=double(nrow(x.train)*nctot),
                    tedraw=double(nrow(x.test)*nctot),
-                   vcdraw=integer(ncol(x.train)*nctot))
+                   vcdraw=integer(ncol(x.train)*nctot), tsdraw = integer(ntree*nctot))
 	
    # now read in the results...
    if(!binary) {

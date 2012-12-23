@@ -29,7 +29,6 @@ public:
 void CopyRule(Rule *r1,Rule *r2);
 class Node {
 public:
-
 	Node();
 	~Node();
 
