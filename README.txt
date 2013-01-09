@@ -1,21 +1,31 @@
 =============================================
 Bayesian Additive Regression Tree Project
-README, 2013-01-07
+README
+Opened: 2013-01-07
 =============================================
 
->> EXECUTION DIRECTIONS:
+>> COMPILE AND LINK DIRECTIONS:
 
-0. install R
+Requires 64-bit R to be installed on your system.
 
-1. on command line, type:
+1. scp git-afsis@themathpath.com:~/bart.data/AfSIS-Core\ MIR\ first\ derivative.csv bart/data 
+2. cd bart/src
+3. on command line, type:
 
 [BayesTree/src]$ R CMD COMPILE mbart.cpp BirthDeath.cpp ChangeRule.cpp Funs.cpp Lib.cpp Likelihood.cpp List.cpp MuS.cpp Node.cpp Prior.cpp Rlob.cpp Swap.cpp
 
-2. on command line, type:
+4. on command line, type:
 
 [BayesTree/src]$ R CMD SHLIB mbart.cpp BirthDeath.cpp ChangeRule.cpp Funs.cpp Lib.cpp Likelihood.cpp List.cpp MuS.cpp Node.cpp Prior.cpp Rlob.cpp Swap.cpp
 
-3. type R on command line, to enter R:
+This will build mbart.so in the bart/src directory. 
+You need to repeat steps 2 through 4 if you modify any .cpp files and want to rebuild the programs.
+
+
+>> EXECUTION DIRECTIONS:
+
+1. cd bart/src
+2. type R on command line, to enter R:
 
 [BayesTree/src]$ R
 
@@ -28,35 +38,33 @@ Type 'q()' to quit R.
 
 > 
 
-4. in R command prompt, run:
+3. at R command prompt, run:
 	
-	dyn.load("mbart.so")
+dyn.load("mbart.so")
 
-5. in R command prompt, run:
+4. at R command prompt, run:
 
-	source("../R/bartcode_v2_101512.R")
+source("../R/bartcode_v2_101512.R")
 
 you should then see numbers flying across the screen, and the following files written to MCMCresults:
 
-MCMC100
-MCMC1000
-MCMC1100
-MCMC200
-MCMC300
-MCMC400
-MCMC500
-MCMC600
-MCMC700
-MCMC800
-MCMC900
+MCMC100.txt
+MCMC200.txt
+MCMC300.txt
+MCMC400.txt
+MCMC500.txt
+MCMC600.txt
+MCMC700.txt
+MCMC800.txt
+MCMC900.txt
+MCMC1000.txt
+MCMC1100.txt
 
-
-
+Each of these files currently contains the trees generated at different stages of the MCMC algorithm.
 
 
 
 2013-01-08
-
 
 >> BART = Bayesian Additive Regression Tree
 
@@ -144,10 +152,10 @@ Part I: Modify mbart.cpp such that the trees which are currently being printed w
 Part II: Write an auxiliary program forest_action.cpp that takes two arguments:
 	a. A forest of trees from disk (one of the files from Part I) 
 	b. A vector of numbers
-and then performs the action of the forest on this vector, returning the corresponding sum of mu values.
+and then performs the action of the forest on this vector, returning the corresponding sum of mu values. This action of a vector onto a tree is already computed somehow in Node::currentFits(), so you do not have to write it from scratch.
 	
-Note: Since Part II requires using the trees saved in Part I, it is important to save the trees in a format that allows them to be easily reconstructed in Part II. Pre-order traversal is one way to go. (http://leetcode.com/2010/09/saving-binary-search-tree-to-file.html) 
-
+Note 1: We need to develop a basic understanding of the code structure.
+Note 2: Since Part II requires using the trees saved in Part I, it is important to save the trees in a format that allows them to be easily reconstructed in Part II. Pre-order traversal is one way to go. (http://leetcode.com/2010/09/saving-binary-search-tree-to-file.html) 
 
 
 - William Wu, 2013-01-08

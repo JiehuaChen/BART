@@ -1,6 +1,10 @@
 #ifndef GUARD_List
 #define GUARD_List
 
+// Note: This is simply an implementation of a doubly-linked list.
+// Each element of the doubly-linked list is called a Cell.
+// The List itself contains pointers to the initial and final Cells.
+
 class Cell {
 public:
 	int Beg; //flag for is it the first cell(1=yes 0=no)

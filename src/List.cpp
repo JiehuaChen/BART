@@ -38,6 +38,7 @@ List::List()
 	length=0;
 }
 
+// deallocate Cells and kill them off
 void List::deall()
 {
 	if(length>0) {

@@ -36,7 +36,7 @@ public:
 	// whether the node is a top, bottom, or nogrand
 	int Top;
 	int Bot;
-	int Nog;
+	int Nog; // node with children but no grandchildren -- second-to-last to the end, so to speak
 	
 	// pointers for tree structure
 	Node *Parent;
