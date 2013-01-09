@@ -63,6 +63,13 @@ MCMC1100.txt
 Each of these files currently contains the trees generated at different stages of the MCMC algorithm.
 
 
+>> TROUBLESHOOTING
+
+If upon executing the bartcode program in R, you see "Killed", it is possible that your computer does not have enough memory to run this program. 
+Unfortunately I do not know the exact memory requirements for this program at the moment.
+From experimentation, we have two data points: 256 MB is definitely not enough, but 8 GB is definitely enough.
+A few gigabytes of memory is most likely preferred. 
+
 
 2013-01-08
 
