@@ -196,6 +196,7 @@ Node::Node()
 	Top = 1;
 	Bot = 1;
 	Nog = 0;
+	TrainedMu = 0.0;
 
 	VarAvail = new int [NumX+1];
 	int i;
@@ -276,6 +277,9 @@ void Node::PrintTree(FILE *out)
 			fprintf(out,"(%d)=%f",rule.OrdRule,rule.SplitVal());
 		}
 	}
+	else{
+		fprintf(out," Mu: %f ",TrainedMu);
+	}
 	fprintf(out,"\n");
 
 	if(!Bot) {
@@ -309,6 +313,9 @@ void Node::PrintBernTree(FILE *out)
 			fprintf(out,"ORDRule:");
 			fprintf(out,"(%d)=%f",rule.OrdRule,rule.SplitVal());
 		}
+	}
+	else{
+		fprintf(out," Mu: %f ",TrainedMu);
 	}
 	fprintf(out,"\n");
 
@@ -624,6 +631,8 @@ void Node::currentFits(MuS* mod,int nTrain,double** xTrain,double* yTrain,int nT
 		postmu = b*ybar/(a+b);
 		postsd = 1.0/sqrt(a+b);
 		nodeMu = postmu + postsd*norm_rand();
+
+		((Node *)botvec[i])->TrainedMu = nodeMu; //The trained mu value is assigned to the corresponding bottom node for printing.
 
 		for(int j=1; j<=nTest; j++) {
 			if(indPartTest[j]==i) fits[2][j]=nodeMu;

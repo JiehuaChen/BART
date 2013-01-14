@@ -19,7 +19,7 @@ public:
 	int OrdRule; // if ordered this will be the index of the split value
 
 	int *CatRule;
-
+	
 	int Right(double *x); // returns 1 if vector x "goes" to right node, 0 else
 	void deall();
 
@@ -37,6 +37,7 @@ public:
 	int Top;
 	int Bot;
 	int Nog; // node with children but no grandchildren -- second-to-last to the end, so to speak
+	double TrainedMu; //storing the Mu value of each bottom node trained by MCMC
 	
 	// pointers for tree structure
 	Node *Parent;
