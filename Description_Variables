@@ -1,0 +1,44 @@
+BART Model
+	y = f(x) + e
+
+where y is a scalar, x is a vector, e is noise with Gaussian distribution of mean 0, and unknown variance sigma^2 , and f is an unknown function. 
+
+Our goal is to estimate f, given training data (X_1,y_1),...,(X_N,y_N) to predict on new values of X's (test).
+
+int *iNumObs,	number of training data points (number of rows of train data matrix)
+int *iNumX,		number of different explanatory variables (number of columns of explanatory matrix X)
+int *inrowTest,	number of test data points (number of rows of test data matrix )
+double *iXDat,  training explanatory variable matrix X
+double *iYDat,	training training response vector Y 
+double *iXTest,	test explanatory variable matrix
+double *isigma, initial values of sigma^2 (the variance of the noise e)
+int *isigdf,  
+double *isigquant,
+isigdf, isigquant  are parameters for the  prior distribution of sigma^2
+double *ikfac,  
+double *ipower,
+double *ibase,
+the above 3 variables are for the prior distribution of trees (f).
+
+double *ibinary_offset, used for binary Y: The model is P(Y=1 | x) = F(f(x) + binaryOffset).
+The idea is that f is shrunk towards 0, so the offset allows you to shrink towards a probability other than .5.
+
+int *iNTree, number of trees  
+int *indPost, The number of posterior draws after burn in, ndpost/keepevery will actually be returned.
+int *iprintevery, As the MCMC runs, a message is printed every printevery draws.
+int *ikeepevery, Every keepevery draw is kept to be returned to the user.
+int *ikeeptrainfits, If true the draws of f(x) for x = rows of x.train are returned.
+int *inumcut, 
+	The number of possible values of c (see usequants). If a single number if given, this is used for all variables. Otherwise a vector with length equal to ncol(x.train) is 				required, where the i^th element gives the number of c used for the i^th variable in x.train. If usequants is false, numcut equally spaced cutoffs are used covering the range of values in the corresponding column of x.train. If usequants is true, then min(numcut, the number of unique values in the corresponding columns of x.train - 1) c values are used.
+
+int *iusequants, 
+Decision rules in the tree are of the form x <= c vs. x > c for each variable corresponding to a column of x.train. usequants determines how the set of possible c is determined. If usequants is true, then the c are a subset of the values (xs[i]+xs[i+1])/2 where xs is unique sorted values obtained from the corresponding column of x.train. If usequants is false, the cutoffs are equally spaced across the range of values taken on by the corresponding column of x.train.
+
+int *iprintcutoffs, The number of cutoff rules c to printed to screen before the MCMC is run. Give a single integer, the same value will be used for all variables. If 0, nothing is printed.
+
+int *verbose,     Logical, if FALSE supress printing.
+double *sdraw,    values of estimated sigma2 in each MCMC run
+double *trdraw,   fitted values of training data in each MCMC run
+double *tedraw,   predicted values of test data in each MCMC run (this is what we want to calculate given estimated trees)
+int *vcdraw, 	  number of times each explanatory variable used in each MCMC run
+int *tsdraw,      the sizes of trees in each MCMC run
