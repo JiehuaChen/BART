@@ -15,7 +15,7 @@ std::vector< std::vector<double>* > * GetTestData(string infile)
         ifile.open(infile.c_str(), ios::in);
         if(ifile.fail())
         {
-                printf("Can not open file: %s\n",infile.c_str());
+                printf("Cannot open file: %s\n",infile.c_str());
                 exit(1);
         }
         getline(ifile, s_oneline);
@@ -69,4 +69,3 @@ std::vector<double>* ParseOneInput(string &oneline)
 		return NULL;
 	}
 }
-

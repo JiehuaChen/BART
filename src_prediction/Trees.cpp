@@ -1,6 +1,4 @@
-
 #include "Trees.h"
-
 
 Trees::Trees()
 {
@@ -24,7 +22,6 @@ Trees::~Trees()
 	}
 	theTrees.clear();
 }
-
 
 Node* Trees::ParseOneLine(string &oneline)
 {
@@ -221,4 +218,3 @@ double Trees::GetPredictedResult(unsigned int n, double* x)
 	}
 	return result;
 }
-

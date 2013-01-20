@@ -29,14 +29,11 @@ public:
 	Node *LeftC;
 	Node *RightC;
 
-
-	//functions
+	// functions
 	bool GoRight(double *x);
         //void  currentFits(MuS* mod,int nTrain,double** xTrain,double* yTrain,int nTest,double** xTest,double* w, double** fits);
         double currentFits(unsigned int n, double* x);
 
 };
 
-
 #endif
-

@@ -11,6 +11,3 @@ std::vector< std::vector<double>* > * GetTestData(string infile);
 std::vector<double>* ParseOneInput(string &oneline);
 
 #endif
-
-
-

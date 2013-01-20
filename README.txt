@@ -40,10 +40,6 @@ Type 'q()' to quit R.
 
 3. at R command prompt, run:
 	
-dyn.load("mbart.so")
-
-4. at R command prompt, run:
-
 source("../R/bartcode_v2_101512.R")
 
 you should then see numbers flying across the screen, and the following files written to MCMCresults:

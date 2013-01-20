@@ -17,12 +17,11 @@ bart.MIRdata <- cbind(MIRdata[, c("Total.Carbon", "PlotCultMgd", "pH")], MIRdata
 bart.MIRdata.narm <- na.omit(bart.MIRdata)
 
 y <- bart.MIRdata.narm$Total.Carbon
-x <- scale(bart.MIRdata.narm[,-1])
+x <- as.matrix(bart.MIRdata.narm[,-1])
 
-#load revised bart C++ code
+# load revised BART C++ code
 setwd("../src")
-
-dyn.load("mbart.so")  
+dyn.load("mbart.so")
 
 #set up folder to save the MCMC trees. You need to make sure that the folder is empty before running the following code.
 setwd("../MCMCresults") 
