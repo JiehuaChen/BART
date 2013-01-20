@@ -1,6 +1,8 @@
 #include <fstream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sstream>
+#include <iostream>
 #include "Utils.h"
 
 std::vector< std::vector<double>* > * GetTestData(string infile)
@@ -68,4 +70,29 @@ std::vector<double>* ParseOneInput(string &oneline)
 		delete p_vd;
 		return NULL;
 	}
+}
+
+std::vector<double>* GetRangeData(string infile)
+{
+	std::vector<double>* p_v = new std::vector<double>;
+	ifstream range_f(infile.c_str()); 	
+	int numbers_in_row;
+	double num;
+	string str;
+			
+	while (!range_f.eof()) {
+		getline(range_f,str); // read a line
+		stringstream ss(str); // convert to string stream
+		numbers_in_row = 0;
+		while (ss >> num) {
+			if (numbers_in_row > 1) {
+				cerr << "Error: range file has a row with more than one number." << endl;
+				continue;
+			} 
+			(*p_v).push_back(num); // store words from stream into vector
+			numbers_in_row++;
+		}
+	}
+
+	return p_v;
 }
