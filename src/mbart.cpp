@@ -193,6 +193,42 @@ extern "C" {
 			}
 		}
 
+		//output the XDat, YDat and Y to files for testing predict
+
+		sprintf(fileName, "xdat.txt");
+		datafile = fopen(fileName,"w+t"); // append mode
+		for(int i = 1; i <= NumObs; i++)
+		{
+			for(int j = 1; j <= NumX; j++)
+			{
+				fprintf(datafile, "%0.17f ", XDat[i][j]);
+			}
+			fprintf(datafile, "\n");
+		}
+		fclose (datafile);
+		
+		sprintf(fileName, "ydat.txt");
+		datafile = fopen(fileName,"w+t"); // append mode
+		for(int i = 1; i <= NumObs; i++)
+		{
+			fprintf(datafile, "%0.17f ", YDat[i][1]);
+			fprintf(datafile, "\n");
+		}
+		fprintf(datafile, "\n");
+		fclose (datafile);
+			
+		sprintf(fileName, "Y.txt");
+		datafile = fopen(fileName,"w+t"); // append mode
+		for(int i = 1; i <= NumObs; i++)
+		{
+			fprintf(datafile, "%0.17f ", Y[i]);
+			fprintf(datafile, "\n");
+		}
+		fprintf(datafile, "\n");
+		fclose (datafile);
+
+
+
 		VarType = new int [NumX+1];
 		for(int i=1; i<=NumX; i++) VarType[i]=ORD;
 		weights = new double[NumObs+1];
@@ -373,6 +409,12 @@ extern "C" {
 					datafile = fopen(fileName,"a+t"); // append mode
 					fprintf(datafile, " Tree%d", treen);
 					fprintf(datafile,"\n");
+//					fprintf(datafile,"YDat1:");
+//					for(int ii = 1; ii <= NumObs; ii++)
+//					{
+//						fprintf(datafile," %f",YDat1[ii]);
+//					}
+//					fprintf(datafile,"\n");
 					theTrees[i]->PrintTree(datafile);
 					fclose (datafile);
 				} else {

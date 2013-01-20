@@ -221,7 +221,7 @@ void Node::PrintTree()
 	int d;
 
 	d=Depth(this);
-	printf(" Depth:%d",d);
+	printf(" Depth:%d ",d);
 	for(i=1; i<=d; i++) printf(" ");
 
 	//printf("node:%X",this);
@@ -241,6 +241,9 @@ void Node::PrintTree()
 			printf("(%d)=%f",rule.OrdRule, rule.SplitVal());
 		}
 	}
+	else{
+		printf(" Mu: %f ",TrainedMu);
+	}
 	printf("\n");
 
 	if(!Bot) {
@@ -256,7 +259,7 @@ void Node::PrintTree(FILE *out)
 	int d;
 
 	d=Depth(this);
-	fprintf(out, " Depth:%d",d);
+	fprintf(out, " Depth:%d ",d);
 	for(i=1; i<=d; i++) fprintf(out," ");
 
 
@@ -274,11 +277,11 @@ void Node::PrintTree(FILE *out)
 			for(i=1; i<=RuleNum[rule.Var]; i++) fprintf(out," %d",rule.CatRule[i]);
 		} else {
 			fprintf(out,"ORDRule:");
-			fprintf(out,"(%d)=%f",rule.OrdRule,rule.SplitVal());
+			fprintf(out,"(%d)=%0.17f",rule.OrdRule,rule.SplitVal());
 		}
 	}
 	else{
-		fprintf(out," Mu: %f ",TrainedMu);
+		fprintf(out," Mu: %0.17f ",TrainedMu);
 	}
 	fprintf(out,"\n");
 
