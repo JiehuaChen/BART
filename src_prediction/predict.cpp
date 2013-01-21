@@ -42,7 +42,7 @@ usage (void) {
 	printf ("\t-h\n");
 	printf ("\t\tDisplays this help message.\n");
 	printf ("\nEXAMPLE:\n");
-	printf ("\t./predict -x ../MCMCresults/xdat.txt -f \"../MCMCresults/MCMC*.txt\" -s \" \" -r rgy.txt -o predictedY.txt\n");
+	printf ("\t./predict -x ../MCMCresults/xdat.txt -f \"../MCMCresults/MCMC*.txt\" -s \" \" -r ../MCMCresults/rgy.txt -o predictedY.txt\n");
 	printf ("\nCONTACT:\n");
 	printf ("\tJiehua Chen <jc3288@columbia.edu>, 2013-01-20\n");
 }
@@ -83,7 +83,7 @@ int main(int argc, char **argv)
 	// defaults
 	const char *xpath = "../MCMCresults/xdat.txt";
 	const char *fpath = "../MCMCresults/MCMC*.txt";
-	const char *rpath = "rgy.txt";
+	const char *rpath = "../MCMCresults/rgy.txt";
 	const char *opath = "predictedY.txt";
 	const char *sep = ","; // csv format
 	// options
