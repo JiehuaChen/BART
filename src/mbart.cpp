@@ -9,6 +9,10 @@
 #include <valarray>
 #include <algorithm>
 
+#include <sstream>
+#include <iomanip>
+#include <math.h>
+
 extern "C" {
 #include <R.h>
 #include <Rmath.h>
@@ -28,6 +32,9 @@ extern "C" {
 	double F77_NAME(ddot)(const int *n, const double *dx,
 	                      const int *incx, const double *dy, const int *incy);
 };
+
+
+int num_digits(const int number);
 
 using namespace std;
 
@@ -60,7 +67,7 @@ double pBD;
 double pSwap;
 double pChange;
 FILE *datafile;
-char fileName[ 20 ] ;
+char fileName[ 30 ] ;
 
 CPriParams PriParams;
 EndNodeModel* endNodeModel=0;
@@ -356,8 +363,8 @@ extern "C" {
 		mfits[2] = new double[nrowTest+1];
 
 		int scnt=0;    // count draws of sigma
-		int trcnt=0;   //count draws of train fits
-		int tecnt=0;   //count draws of test  fits
+		int trcnt=0;   // count draws of train fits
+		int tecnt=0;   // count draws of test  fits
 		std::vector<int> varcnt; //store var counts, each draw
 		typedef std::vector<int>::size_type ivs;
 		int vcnt=0;    // count draws of var counts
@@ -368,24 +375,26 @@ extern "C" {
 		double *onev = new double[NTree+1];
 		for(int k=1; k<=NTree; k++) onev[k]=1.0;
 
-
 		time_t tp;
 		int time1 = time(&tp);
 
     /* delete MCMC results files if they exist already */
+    int max_digits = num_digits((ndPost/keepevery)*keepevery);
     int unlink_flag = 0;
-    char fn[2000];
+    stringstream fn_ss;
+    const char* fn;
     for (int i=1; i<= ndPost/keepevery; i++) {
-      sprintf(fn,"MCMC%d.txt",i*keepevery);
+      fn_ss << "MCMC" << setfill('0') << setw(max_digits) << i*keepevery << ".txt";
+      fn = fn_ss.str().c_str();      
       unlink_flag = unlink(fn);
       if (unlink_flag != 0) {
         printf("WARNING: Failed to delete %s.\n",fn);
       } else {
         printf("Notice: Deleted file %s.\n",fn);
       }
+      fn_ss.str("");
     }
     putchar('\n');
-
 
 		if(*verbose) Rprintf("Running mcmc loop:\n");
 		for (int k=1; k<=ndPost; k++) {
@@ -404,9 +413,9 @@ extern "C" {
 
 				if(k%keepevery==0) {
 					theTrees[i]->currentFits(&mu,NumObs,XDat,YDat1,nrowTest,XTest,weights,mfits);
-          // JC added the following print statements in the if condition
-					sprintf(fileName, "MCMC%d.txt", k);
-					datafile = fopen(fileName,"a+t"); // append mode
+					// print statements in the if condition, originally added by JC
+			      	fn_ss << "MCMC" << setfill('0') << setw(max_digits) << k << ".txt";
+					datafile = fopen(fn_ss.str().c_str(),"a+t"); // append mode
 					fprintf(datafile, " Tree%d", treen);
 					fprintf(datafile,"\n");
 //					fprintf(datafile,"YDat1:");
@@ -417,6 +426,7 @@ extern "C" {
 //					fprintf(datafile,"\n");
 					theTrees[i]->PrintTree(datafile);
 					fclose (datafile);
+					fn_ss.str("");
 				} else {
 					theTrees[i]->currentFits(&mu,NumObs,XDat,YDat1,0,XTest,weights,mfits);
 				}
@@ -526,3 +536,15 @@ extern "C" {
 		PutRNGstate();
 	}
 };
+
+
+int num_digits(const int number)
+{
+	int digits = 0;
+	int step = 1;
+	while (step <= number) {
+		digits++;
+		step *= 10;
+	}
+	return digits ? digits : 1;
+}

@@ -26,18 +26,6 @@ You need to repeat steps 2 through 4 if you modify any .cpp files and want to re
 
 1. cd bart/src
 2. type R on command line, to enter R:
-
-[BayesTree/src]$ R
-
-R version 2.15.0 (2012-03-30)
-Copyright (C) 2012 The R Foundation for Statistical Computing
-...
-Type 'demo()' for some demos, 'help()' for on-line help, or
-'help.start()' for an HTML browser interface to help.
-Type 'q()' to quit R.
-
-> 
-
 3. at R command prompt, run:
 	
 source("../R/bartcode_v2_101512.R")
