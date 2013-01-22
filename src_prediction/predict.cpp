@@ -11,7 +11,7 @@
 #include <glob.h>
 #include <string>
 #include <numeric>
-
+#include <algorithm>
 #include "Node.h"
 #include "Trees.h"
 #include "Utils.h"
