@@ -137,22 +137,22 @@ int main(int argc, char **argv)
 	if (0==xflag) {
 		printf ("No explanatory variables file specified as input -- defaulting to %s\n",xpath);
 	} else {
-		printf ("Explanatory variables file (input): %s\n",xpath);
+		if (vflag) printf ("Explanatory variables file (input): %s\n",xpath);
 	}
 	if (0==fflag) {
 		printf ("No forests glob specified as input -- defaulting to %s\n",fpath);	
 	} else {
-		printf ("Forests glob (input): %s\n",fpath);	
+		if (vflag) printf ("Forests glob (input): %s\n",fpath);	
 	}
 	if (0==rflag) {
 		printf ("No range file (input) specified -- defaulting to %s.\n",rpath);
 	} else {
-		printf ("Range file (input): %s\n",rpath);	
+		if (vflag) printf ("Range file (input): %s\n",rpath);	
 	}
 	if (0==oflag) {
 		printf ("No predictions file (output) specified -- defaulting to %s.\n",opath);
 	} else {
-		printf ("Predictions file (output): %s\n",opath);	
+		if (vflag) printf ("Predictions file (output): %s\n",opath);	
 	}
 	// argument checking
 	if (!(file_read_check(xpath))) { 
@@ -199,21 +199,26 @@ int main(int argc, char **argv)
 	std::sort(forestsfilenames.begin(), forestsfilenames.end());
 
 	std::vector<std::vector<double> > prediction_matrix;
-
 	std::vector<double> prediction_times;		
+	std::vector<int> forest_sizes;
+	
 	for (unsigned int k=0; k<forestsfilenames.size(); k++)  // iterate over forests
 	{
-		printf("=============================================\n");
-		printf("FOREST: %s\n", forestsfilenames[k].c_str());
-		printf("=============================================\n");
-		printf("Number of predicted values: %d\n", (int) (p_vv_testdata->size() - 1));
+		if (vflag) {
+			printf("=============================================\n");
+			printf("FOREST: %s\n", forestsfilenames[k].c_str());
+			printf("=============================================\n");
+			printf("Number of predicted values: %d\n", (int) (p_vv_testdata->size() - 1));
+		}
 
 		t1_prediction = clock();
 		prediction_matrix.push_back(std::vector<double>());
 		
 		Trees *p_tree = new Trees;
 		p_tree->ParseTreesFile(forestsfilenames[k]);
-		p_tree->BuildTrees();
+		p_tree->BuildTrees();		
+		forest_sizes.push_back(p_tree->theTrees.size() - 1);
+		
 		for(unsigned int i=1;i<p_vv_testdata->size();i++) // iterate over variables
 		{
 	//		printf("%u:%u\n",p_vv_testdata->size(),p_vv_testdata->at(i)->size());
@@ -226,7 +231,9 @@ int main(int argc, char **argv)
 			OneY_corrected = range_correction(OneY, range_low, range_high); // range correction
 			prediction_matrix[k].push_back(OneY_corrected);
 			
-			printf("Predicted and range-corrected Y[%d]: %f --> %f\n",i,OneY,OneY_corrected); // print to screen
+			if (vflag) {
+				printf("Predicted and range-corrected Y[%d]: %f --> %f\n",i,OneY,OneY_corrected); // print to screen
+			}
 			delete p_OneX; // free memory
 		}
 		delete p_tree;
@@ -234,6 +241,10 @@ int main(int argc, char **argv)
 		t2_prediction = clock();
 		prediction_times.push_back((t2_prediction - t1_prediction) / CLOCKS_PER_SEC);
 	}
+
+	/************************************************************
+    WRITE PREDICTIONS TO DISK
+	************************************************************/
 
 	// transpose prediction_matrix
 	int F = (int)prediction_matrix.size(); // number of variables
@@ -247,12 +258,25 @@ int main(int argc, char **argv)
 		}
 	}
 
-	// write all predictions to disk
+	// initializations
 	cout << "\nPredictions complete." << endl;
 	string predictedfileName(opath);
 	FILE* predictedfile = fopen(predictedfileName.c_str(),"w+t"); // overwrite mode
-	double mean, deviation;
-	// vector<double> zero_mean;
+	double mean, deviation;	
+	
+	// print headers
+	for (unsigned int j=0; j<A[0].size(); j++) {
+		fprintf(predictedfile,"draw %d",j+1);
+		fprintf(predictedfile,"%s",sep);
+		if (j==A[0].size()-1) { // compute mean and standard deviation
+			fprintf(predictedfile,"mean");
+			fprintf(predictedfile,"%s",sep);
+			fprintf(predictedfile,"std");
+		}
+	}
+	fprintf(predictedfile,"\n");
+	
+	// print data
 	for (unsigned int i=0; i<A.size(); i++) {
 		for (unsigned int j=0; j<A[0].size(); j++) {
 			fprintf(predictedfile,"%0.6f",A[i][j]);
@@ -272,12 +296,14 @@ int main(int argc, char **argv)
 		}
 		fprintf(predictedfile,"\n");
 	}
-	cout << "Range-corrected predictions using the forests in: " << endl;
-	for (unsigned int k=0; k<forestsfilenames.size(); k++) {
-		cout << "\t" << forestsfilenames[k] << endl;
+	if (vflag) {
+		cout << "Range-corrected predictions using the forests in: " << endl;
+		for (unsigned int k=0; k<forestsfilenames.size(); k++) {
+			cout << "\t" << forestsfilenames[k] << endl;
+		}
+		cout << "have been written to disk as " << predictedfileName << endl;
 	}
-	cout << "have been written to disk as " << predictedfileName << endl;
-	printf("This is a %d-by-%d matrix, where each forest's predictions are written column by column.\n\n", (int) A.size(), (int) A[0].size());
+
 	fclose(predictedfile);
 
 	/************************************************************
@@ -289,6 +315,9 @@ int main(int argc, char **argv)
 		sprintf(str,"Prediction time for Forest #%d",k);
 		printf("%35s: %15.6lf seconds\n", str, prediction_times[k]);		
 	}
+
+	printf("Number of trees in the BART model: %d.\n", forest_sizes[0]); // assumes that all forests have same # of trees
+	printf("Output is a %d-by-%d matrix, where each posterior prediction is written column by column.\n\n", (int) A.size(), (int) A[0].size());
 	
-	return 1;
+	return 0;
 }
