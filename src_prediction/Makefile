@@ -24,7 +24,18 @@ COMOPT := -D_LINUX -D_DEBUG -MD -g
 
 # Now alter any implicit rules' variables if you like, e.g.:
 
-CFLAGS :=  -Wall -O3
+# compiler flags -- command-line options are: 
+# make mode=release (default)
+# make mode=development
+# make mode=debug
+ifeq ($(mode),release)
+	CFLAGS := -O3 -Wall
+else ifeq ($(mode),development)
+	CFLAGS := -O2 -g -p -Wall
+else 
+	CFLAGS := -O0 -g -p -Wall
+endif
+
 CXXFLAGS := $(CFLAGS)
 POSTBUILD := 
 
