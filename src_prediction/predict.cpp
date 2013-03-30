@@ -254,7 +254,7 @@ int main(int argc, char **argv)
 	for (int i = 0; i < V; i++) A[i].resize(F);
 	for (int i = 0; i < F; i++) {
 		for (int j = 0; j < V; j++) {
-			A[j][i] = prediction_matrix[i][j];
+			A[j][i] = exp(prediction_matrix[i][j]);
 		}
 	}
 
@@ -263,7 +263,17 @@ int main(int argc, char **argv)
 	string predictedfileName(opath);
 	FILE* predictedfile = fopen(predictedfileName.c_str(),"w+t"); // overwrite mode
 	double mean, deviation;	
+	vector<double> quantiles_num(7);
+	double percentages[] ={0.025, 0.050, 0.1, 0.5, 0.9, 0.95, 0.975};
+	int n = sizeof(percentages)/sizeof(double);
+	int quantiles_index[n];
+	int sizeA = A[0].size();
 	
+	// compute quantile indices
+	for(unsigned int j=0;j<n;j++){
+		quantiles_index[j]=percentages[j]*sizeA;
+	}
+
 	// print headers
 	for (unsigned int j=0; j<A[0].size(); j++) {
 		fprintf(predictedfile,"draw %d",j+1);
@@ -272,6 +282,10 @@ int main(int argc, char **argv)
 			fprintf(predictedfile,"mean");
 			fprintf(predictedfile,"%s",sep);
 			fprintf(predictedfile,"std");
+			for(unsigned int i=0;i<n;i++) {
+				fprintf(predictedfile,"%s",sep);
+				fprintf(predictedfile,"%5.2lf%%",100*percentages[i]);
+			}
 		}
 	}
 	fprintf(predictedfile,"\n");
@@ -281,17 +295,23 @@ int main(int argc, char **argv)
 		for (unsigned int j=0; j<A[0].size(); j++) {
 			fprintf(predictedfile,"%0.6f",A[i][j]);
 			fprintf(predictedfile,"%s",sep);
-
-			if (j==A[0].size()-1) { // compute mean and standard deviation
+			if (j==A[0].size()-1) { 
+				// compute mean and standard deviation
 				mean = accumulate( A[i].begin(), A[i].end(), 0.0f )/ A[i].size();
 				vector<double> zero_mean( A[i] );
 				transform( zero_mean.begin(), zero_mean.end(), zero_mean.begin(),bind2nd( minus<float>(), mean ) );
 			   	deviation = inner_product( zero_mean.begin(),zero_mean.end(), zero_mean.begin(), 0.0f );
-				deviation = sqrt( deviation / ( A[i].size() - 1 ) );
-
+				deviation = sqrt( deviation / ( A[i].size() - 1 ) );			
 				fprintf(predictedfile,"%0.6f",mean);
 				fprintf(predictedfile,"%s",sep);
 				fprintf(predictedfile,"%0.6f",deviation);
+				// compute quantiles
+				vector<double> sorted(A[i]);
+				sort(sorted.begin(), sorted.end());
+				for(unsigned int k=0;k<n;k++){
+					fprintf(predictedfile,"%s",sep);
+					fprintf(predictedfile,"%0.6f",sorted[quantiles_index[k]]);
+				}
 			}
 		}
 		fprintf(predictedfile,"\n");
