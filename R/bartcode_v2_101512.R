@@ -38,10 +38,12 @@ setwd("../MCMCresults")
    power=2.0
    base=.95
    binaryOffset=0
+   
    #number of trees
    ntree=130
-   ndpost=1000
+    
    #number of chains to skip before saving the results
+   ndpost=1000
    nskip=100
    printevery=100
    keepevery=100
