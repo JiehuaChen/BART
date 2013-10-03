@@ -8,10 +8,23 @@
 #include <vector>
 #include <valarray>
 #include <algorithm>
-
 #include <sstream>
 #include <iomanip>
 #include <math.h>
+#include <iostream>
+#include <stdio.h>
+#include <sys/resource.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <string.h>
+#include <vector>
+#include <fstream>
+#include <time.h>
+#include <math.h>
+#include <glob.h>
+#include <string>
+
+
 
 extern "C" {
 #include <R.h>
@@ -72,6 +85,17 @@ char fileName[ 30 ] ;
 CPriParams PriParams;
 EndNodeModel* endNodeModel=0;
 
+inline std::vector<std::string> glob(const std::string& pat){
+    glob_t glob_result;
+    glob(pat.c_str(),GLOB_TILDE,NULL,&glob_result);
+    vector<string> ret;
+    for(unsigned int i=0;i<glob_result.gl_pathc;++i){
+        ret.push_back(string(glob_result.gl_pathv[i]));
+    }
+    globfree(&glob_result);
+    return ret;
+}
+
 extern "C" {
 	void mbart(int *iNumObs, int *iNumX, int *inrowTest,
 	           double *iXDat, double *iYDat,
@@ -80,7 +104,7 @@ extern "C" {
 	           double *ikfac,
 	           double *ipower, double *ibase,
 	           double *ibinary_offset,
-	           int *iNTree, int *indPost,
+	           int *iNTree, int *indPost, int *indskip,
 	           int *iprintevery, int *ikeepevery, int *ikeeptrainfits,
 	           int *inumcut, int *iusequants, int *iprintcutoffs,
 	           int *verbose,
@@ -88,7 +112,7 @@ extern "C" {
 	{
 		Rprintf("\n\nStrat\n\n");
 		GetRNGstate();
-
+        
 		bool binary = (*ibinary_offset > -1000.0);
 		double binary_offset = *ibinary_offset;
 
@@ -119,6 +143,8 @@ extern "C" {
 		int NTree = *iNTree;
 		int ndPost = *indPost;
 
+        int nSkip = *indskip;
+        
 		int printevery= *iprintevery;
 		int keepevery = *ikeepevery;
 		bool keeptrainfits = true;
@@ -383,14 +409,17 @@ extern "C" {
     int unlink_flag = 0;
     stringstream fn_ss;
     const char* fn;
-    for (int i=1; i<= ndPost/keepevery; i++) {
-      fn_ss << "MCMC" << setfill('0') << setw(max_digits) << i*keepevery << ".txt";
-      fn = fn_ss.str().c_str();      
+    const char *fpath = "MCMC*.txt";
+    std::vector<std::string> forestsfilenames = glob(fpath);
+    std::sort(forestsfilenames.begin(), forestsfilenames.end());
+    
+    for (unsigned int i=0; i<forestsfilenames.size(); i++) {
+      fn = forestsfilenames[i].c_str();  
       unlink_flag = unlink(fn);
       if (unlink_flag != 0) {
-        printf("WARNING: Failed to delete %s.\n",fn);
+        Rprintf("WARNING: Failed to delete %s.\n", fn);
       } else {
-        printf("Notice: Deleted file %s.\n",fn);
+        Rprintf("Notice: Deleted file %s.\n",fn);
       }
       fn_ss.str("");
     }
@@ -414,10 +443,11 @@ extern "C" {
 				if(k%keepevery==0) {
 					theTrees[i]->currentFits(&mu,NumObs,XDat,YDat1,nrowTest,XTest,weights,mfits);
 					// print statements in the if condition, originally added by JC
-			      	fn_ss << "MCMC" << setfill('0') << setw(max_digits) << k << ".txt";
-					datafile = fopen(fn_ss.str().c_str(),"a+t"); // append mode
-					fprintf(datafile, " Tree%d", treen);
-					fprintf(datafile,"\n");
+					if(k>nSkip){
+			      	    fn_ss << "MCMC" << setfill('0') << setw(max_digits) << k << ".txt";
+					    datafile = fopen(fn_ss.str().c_str(),"a+t"); // append mode
+					    fprintf(datafile, " Tree%d", treen);
+					    fprintf(datafile,"\n");
 //					fprintf(datafile,"YDat1:");
 //					for(int ii = 1; ii <= NumObs; ii++)
 //					{
@@ -427,6 +457,7 @@ extern "C" {
 					theTrees[i]->PrintTree(datafile);
 					fclose (datafile);
 					fn_ss.str("");
+				    }
 				} else {
 					theTrees[i]->currentFits(&mu,NumObs,XDat,YDat1,0,XTest,weights,mfits);
 				}

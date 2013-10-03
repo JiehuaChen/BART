@@ -31,17 +31,19 @@ setwd("../MCMCresults")
    y.train <- y
    #explanatory variables for test set
    x.test=matrix(0.0,0,0)
-   sigdf=3
+   sigdf=10
    sigest=sd(y)
-   sigquant=.90 
-   k=2.0
+   sigquant=.75 
+   k=3.0
    power=2.0
    base=.95
    binaryOffset=0
+   
    #number of trees
-   ntree=20
-   ndpost=1000
+   ntree=130
+    
    #number of chains to skip before saving the results
+   ndpost=1000
    nskip=100
    printevery=100
    keepevery=100
@@ -114,7 +116,7 @@ setwd("../MCMCresults")
    if(base <= 0) stop("base must be positive")
 
    rgy = range(y.train)
-   y = -.5 + (y.train-rgy[1])/(rgy[2]-rgy[1])
+   y.train = -.5 + (y.train-rgy[1])/(rgy[2]-rgy[1])
 
    # if sigest=NA, fit a lm to training data to get the value of sigest...
    # sigest is on the scale of the transformed y, so we do the lm after the scaling above...
@@ -139,7 +141,7 @@ setwd("../MCMCresults")
    }
 	
    cres = .C('mbart',as.integer(nrow(x.train)), as.integer(ncol(x.train)), as.integer(nrow(x.test)),
-                   as.double(x.train), as.double(y),
+                   as.double(x.train), as.double(y.train),
                    as.double(x.test),
                    as.double(sigest),   as.integer(sigdf), as.double(sigquant),
                    as.double(k),

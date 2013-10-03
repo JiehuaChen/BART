@@ -15,6 +15,7 @@
 #include "Node.h"
 #include "Trees.h"
 #include "Utils.h"
+#include <cmath>
 
 using namespace std;
 int NumX;
@@ -55,9 +56,31 @@ bool file_write_check(const char *filename) {
 	std::ofstream ofile(filename);
 	return ofile;
 }
-inline double range_correction(double y, double lower, double upper) {
-	return ((upper-lower)*(y + .5) + lower);
+inline double range_correction(double y, double lower) {
+	return (y + lower);
 }
+inline double phi(double x){
+    // constants
+    double a1 =  0.254829592;
+    double a2 = -0.284496736;
+    double a3 =  1.421413741;
+    double a4 = -1.453152027;
+    double a5 =  1.061405429;
+    double p  =  0.3275911;
+
+    // Save the sign of x
+    int sign = 1;
+    if (x < 0)
+        sign = -1;
+    x = fabs(x)/sqrt(2.0);
+
+    // A&S formula 7.1.26
+    double t = 1.0/(1.0 + p*x);
+    double y = 1.0 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t*exp(-x*x);
+
+    return 0.5*(1.0 + sign*y);
+}
+
 inline std::vector<std::string> glob(const std::string& pat){
     glob_t glob_result;
     glob(pat.c_str(),GLOB_TILDE,NULL,&glob_result);
@@ -188,7 +211,6 @@ int main(int argc, char **argv)
 	std::vector<double>* p_range;
 	p_range = GetRangeData(rangefile);
 	double range_low = p_range->at(0);
-	double range_high = p_range->at(1);
 
 	t2_read = clock();
 	
@@ -228,7 +250,7 @@ int main(int argc, char **argv)
 				p_OneX[j] = p_vv_testdata->at(i)->at(j);
 			}
 			OneY = p_tree->GetPredictedResult(p_vv_testdata->at(i)->size(), p_OneX); // prediction
-			OneY_corrected = range_correction(OneY, range_low, range_high); // range correction
+			OneY_corrected = range_correction(OneY, range_low); // range correction
 			prediction_matrix[k].push_back(OneY_corrected);
 			
 			if (vflag) {
@@ -254,7 +276,7 @@ int main(int argc, char **argv)
 	for (int i = 0; i < V; i++) A[i].resize(F);
 	for (int i = 0; i < F; i++) {
 		for (int j = 0; j < V; j++) {
-			A[j][i] = exp(prediction_matrix[i][j]);
+            A[j][i] =  phi(prediction_matrix[i][j]);
 		}
 	}
 
