@@ -16,3 +16,6 @@ m.1 <- spLM(Y~1, coords=coords,
                "tau.sq.IG"=c(2, 1)),
              cov.model="exponential",
              n.samples=1000, verbose=TRUE, n.report=100)
+             
+# export Y. In this case X is just intercept, which is also the only case that we need to consider here
+write.table(Y, "Ydat.txt", col.names=FALSE, row.names=FALSE, quote=FALSE)

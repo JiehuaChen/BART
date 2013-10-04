@@ -1,0 +1,57 @@
+m.1 <- spLM(Y~1, coords=coords,
+             starting=list("phi"=0.6,"sigma.sq"=1),
+             sp.tuning=list("phi"=0.01, "sigma.sq"=0.05),
+             priors=list("phi.Unif"=c(0.3, 3), "sigma.sq.IG"=c(2, 1)),
+             cov.model="exponential",
+             n.samples=1000, verbose=TRUE, n.report=100)
+             
+
+
+
+SEXP spLM(SEXP Y_r, SEXP X_r, SEXP p_r, SEXP n_r, SEXP coordsD_r,
+SEXP sigmaSqIG_r, SEXP tauSqIG_r, SEXP nuUnif_r, SEXP phiUnif_r,
+        SEXP phiStarting_r, SEXP sigmaSqStarting_r, SEXP tauSqStarting_r, SEXP nuStarting_r, SEXP betaStarting_r,
+        SEXP phiTuning_r, SEXP sigmaSqTuning_r, SEXP tauSqTuning_r, SEXP nuTuning_r, 
+        SEXP nugget_r, SEXP covModel_r, SEXP nSamples_r, SEXP verbose_r, SEXP nReport_r){
+
+// Y ~ 1
+Y_r : Y (spatial process, in mbart, it can take the value of eps generated in line 447 in mbart.cpp);
+X_r : 1 (intercept)
+p_r : number of column in X_1, here is 1
+n_r : number of rows of Y_r (the same as the number of rows of X_r), i.e., the number of data points;
+
+// coords = coords
+coordsD_r:  coords in m.1 formula, a n_r by 2 matrix indicating x, and y locations of data points;
+
+// priors = list("phi.Unif" = c(0.3, 3), "sigma.sq.IG" = c(2, 1), "tau.sq.IG" = c(2, 1))
+sigmaSgIG_r: c(2, 1) : Inverse-gamma distribution with parameters 2 and 1
+tauSqIG_r: no needed when nugget_r = FALSE
+nuUnif_r: no needed for cov.model = "exponential"
+phiUnif_r: c(0.3, 3): uniform distribution between 0.3 and 3
+
+//starting = list("phi"=0.6, "sigma.sq" = 0.05, "tau.sq"= 0.05)
+phiStarting_r: 0.6 ("phi"): starting value of phi
+sigmaSqStarting_r: 0.05 ("sigma.sq"): starting value of sigma.sq 
+tauSqStarting_r: not needed when nugget_r =FALSE
+nuStarting_r: not needed when cov.model = "exponential"
+betaStarting_r: 0 (default in R) 
+
+//sp.tuning=list("phi"=0.01, "sigma.sq"=0.05, "tau.sq"=0.05),
+// tuning values decide the size of jumps for different parameters in each MCMC step
+phiTuning_r: 0.01 ("phi"): tuning value of phi
+sigmaSqTuning_r: 0.05 ("sigma.sq"): tuning value of sigmasq
+tauSqTuning_r: not needed when nugget_r =FALSE
+nuTuning_r: no neede for cov.model = "exponential"
+nugget_r: False (if tauSqIG_r, tauSqStarting_r, and tauSqTuning_r are missing then nugget_r is automatically set to be False)
+
+// cov.model = "exponential"
+covModel_r: "exponential"
+
+// n.sample = 1000
+nSamples_r: 1000:  number of MCMC interations
+
+// verbose = TRUE
+verbose_r : TRUE
+
+// n.report = 100
+nReport_r : 100 :the interval to report Metropolis acceptance and MCMC progress.
