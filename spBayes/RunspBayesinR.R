@@ -1,6 +1,8 @@
 library(spBayes)
 
-data(rf.n200.dat)
+rf.n200.dat <- read.table("rf.n200.dat", header=TRUE)
+rf.n200.dat <- as.data.frame(rf.n200.dat)
+
 
 Y <- rf.n200.dat$Y
 coords <- as.matrix(rf.n200.dat[,c("x.coords","y.coords")])
