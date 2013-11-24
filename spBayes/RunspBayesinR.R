@@ -13,7 +13,7 @@ w <- rf.n200.dat$w
 ##############################
 m.1 <- spLM(Y~1, coords=coords,
              starting=list("phi"=0.6,"sigma.sq"=1, "tau.sq"=1),
-             sp.tuning=list("phi"=0.01, "sigma.sq"=0.05, "tau.sq"=0.05),
+             tuning=list("phi"=0.01, "sigma.sq"=0.05, "tau.sq"=0.05),
              priors=list("phi.Unif"=c(0.3, 3), "sigma.sq.IG"=c(2, 1),
                "tau.sq.IG"=c(2, 1)),
              cov.model="exponential",
@@ -21,3 +21,4 @@ m.1 <- spLM(Y~1, coords=coords,
              
 # export Y. In this case X is just intercept, which is also the only case that we need to consider here
 write.table(Y, "Ydat.txt", col.names=FALSE, row.names=FALSE, quote=FALSE)
+#write.table(m.1, "result.txt", col.names=FALSE, row.names=FALSE, quote=FALSE)

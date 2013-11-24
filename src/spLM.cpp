@@ -9,24 +9,11 @@
 
 extern "C" {
 
-  SEXP spLM(SEXP Y_r, SEXP X_r, SEXP p_r, SEXP n_r, SEXP coordsD_r,
-	    SEXP betaPrior_r, SEXP betaNorm_r, SEXP sigmaSqIG_r, SEXP tauSqIG_r, SEXP nuUnif_r, SEXP phiUnif_r,
-	    SEXP phiStarting_r, SEXP sigmaSqStarting_r, SEXP tauSqStarting_r, SEXP nuStarting_r,
-	    SEXP phiTuning_r, SEXP sigmaSqTuning_r, SEXP tauSqTuning_r, SEXP nuTuning_r, 
-	    SEXP nugget_r, SEXP covModel_r, SEXP amcmc_r, SEXP nBatch_r, SEXP batchLength_r, SEXP acceptRate_r, SEXP verbose_r, SEXP nReport_r){
-
-    double * betaNorm_r_0 = NULL;
-    double * betaNorm_r_1 = NULL;
-    std::string betaPrior_tmp = CHAR(STRING_ELT(betaPrior_r,0));
-    if(betaPrior_tmp == "normal"){
-		betaNorm_r_0 = REAL(VECTOR_ELT(betaNorm_r, 0));
-		betaNorm_r_1 = REAL(VECTOR_ELT(betaNorm_r, 1));
-	}
-  print_spLM(REAL(Y_r), REAL(X_r), INTEGER(p_r)[0], INTEGER(n_r)[0], REAL(coordsD_r),
-	    CHAR(STRING_ELT(betaPrior_r,0)), betaNorm_r_0, betaNorm_r_1,REAL(sigmaSqIG_r),REAL(tauSqIG_r),REAL(nuUnif_r), REAL(phiUnif_r),
-	    REAL(phiStarting_r)[0], REAL(sigmaSqStarting_r)[0], REAL(tauSqStarting_r)[0], REAL(nuStarting_r)[0],
-	    REAL(phiTuning_r)[0], REAL(sigmaSqTuning_r)[0], REAL(tauSqTuning_r)[0], REAL(nuTuning_r)[0], 
-	    true, CHAR(STRING_ELT(covModel_r,0)), true, INTEGER(nBatch_r)[0], INTEGER(batchLength_r)[0], REAL(acceptRate_r)[0], INTEGER(verbose_r)[0], INTEGER(nReport_r)[0], "spLM_input_start.txt");
+double** spLM(double* Y_r, double* X_r, int p_r, int n_r, double* coordsD_r,
+	    string betaPrior_r, double** betaNorm_r, double* sigmaSqIG_r, double* tauSqIG_r, double* nuUnif_r, double* phiUnif_r,
+	    double phiStarting_r, double sigmaSqStarting_r, double tauSqStarting_r, double nuStarting_r,
+	    double phiTuning_r, double sigmaSqTuning_r, double tauSqTuning_r, double nuTuning_r, 
+	    bool nugget_r, string covModel_r, bool amcmc_r, int nBatch_r, int batchLength_r, double acceptRate_r, int verbose_r, int nReport_r){
 
     /*****************************************
                 Common variables
@@ -48,53 +35,53 @@ extern "C" {
     /*****************************************
                      Set-up
     *****************************************/
-    double *Y = REAL(Y_r);
-    double *X = REAL(X_r);
-    int p = INTEGER(p_r)[0];
+    double *Y = Y_r;
+    double *X = X_r;
+    int p = p_r;
     int pp = p*p;
-    int n = INTEGER(n_r)[0];
+    int n = n_r;
     int nn = n*n;
     int np = n*p;
     
-    double *coordsD = REAL(coordsD_r);
+    double *coordsD = coordsD_r;
 
-    std::string covModel = CHAR(STRING_ELT(covModel_r,0));
+    std::string covModel = covModel_r;
 
     //priors
-    std::string betaPrior = CHAR(STRING_ELT(betaPrior_r,0));
+    std::string betaPrior = betaPrior_r;
     double *betaMu = NULL;
     double *betaC = NULL;
     
     if(betaPrior == "normal"){
       betaMu = (double *) R_alloc(p, sizeof(double));
-      F77_NAME(dcopy)(&p, REAL(VECTOR_ELT(betaNorm_r, 0)), &incOne, betaMu, &incOne);
+      F77_NAME(dcopy)(&p, betaNorm_r[0], &incOne, betaMu, &incOne);
 
       betaC = (double *) R_alloc(pp, sizeof(double)); 
-      F77_NAME(dcopy)(&pp, REAL(VECTOR_ELT(betaNorm_r, 1)), &incOne, betaC, &incOne);
+      F77_NAME(dcopy)(&pp, betaNorm_r[1], &incOne, betaC, &incOne);
     }
 
-    double sigmaSqIGa = REAL(sigmaSqIG_r)[0]; double sigmaSqIGb = REAL(sigmaSqIG_r)[1];
-    double phiUnifa = REAL(phiUnif_r)[0]; double phiUnifb = REAL(phiUnif_r)[1];
+    double sigmaSqIGa = sigmaSqIG_r[0]; double sigmaSqIGb = sigmaSqIG_r[1];
+    double phiUnifa = phiUnif_r[0]; double phiUnifb = phiUnif_r[1];
 
-    bool nugget = static_cast<bool>(INTEGER(nugget_r)[0]);
+    bool nugget = nugget_r;
     double tauSqIGa = 0, tauSqIGb = 0;
     if(nugget){
-      tauSqIGa = REAL(tauSqIG_r)[0]; tauSqIGb = REAL(tauSqIG_r)[1]; 
+      tauSqIGa = tauSqIG_r[0]; tauSqIGb = tauSqIG_r[1]; 
     }
 
     //matern
     double nuUnifa = 0, nuUnifb = 0;
     if(covModel == "matern"){
-      nuUnifa = REAL(nuUnif_r)[0]; nuUnifb = REAL(nuUnif_r)[1]; 
+      nuUnifa = nuUnif_r[0]; nuUnifb = nuUnif_r[1]; 
     }
 
-    bool amcmc = static_cast<bool>(INTEGER(amcmc_r)[0]);
-    int nBatch = INTEGER(nBatch_r)[0];
-    int batchLength = INTEGER(batchLength_r)[0];
-    double acceptRate = REAL(acceptRate_r)[0];
+    bool amcmc = amcmc_r;
+    int nBatch = nBatch_r;
+    int batchLength = batchLength_r;
+    double acceptRate = acceptRate_r;
     int nSamples = nBatch*batchLength;
-    int verbose = INTEGER(verbose_r)[0];
-    int nReport = INTEGER(nReport_r)[0];
+    int verbose = verbose_r;
+    int nReport = nReport_r;
 
     if(verbose){
       Rprintf("----------------------------------------\n");
@@ -163,41 +150,41 @@ extern "C" {
     double *params = (double *) R_alloc(nParams, sizeof(double));
 
     //starting
-    params[sigmaSqIndx] = log(REAL(sigmaSqStarting_r)[0]);
+    params[sigmaSqIndx] = log(sigmaSqStarting_r);
 
     if(nugget){
-      params[tauSqIndx] = log(REAL(tauSqStarting_r)[0]);
+      params[tauSqIndx] = log(tauSqStarting_r);
     }
 
-    params[phiIndx] = logit(REAL(phiStarting_r)[0], phiUnifa, phiUnifb);
+    params[phiIndx] = logit(phiStarting_r, phiUnifa, phiUnifb);
 
     if(covModel == "matern"){
-      params[nuIndx] = logit(REAL(nuStarting_r)[0], nuUnifa, nuUnifb);
+      params[nuIndx] = logit(nuStarting_r, nuUnifa, nuUnifb);
     }
 
     //tuning and fixed
     double *tuning = (double *) R_alloc(nParams, sizeof(double));
     int *fixed = (int *) R_alloc(nParams, sizeof(int)); zeros(fixed, nParams);
     
-    tuning[sigmaSqIndx] = REAL(sigmaSqTuning_r)[0];
+    tuning[sigmaSqIndx] = sigmaSqTuning_r;
     if(tuning[sigmaSqIndx] == 0){
       fixed[sigmaSqIndx] = 1;
     }
           
     if(nugget){
-      tuning[tauSqIndx] = REAL(tauSqTuning_r)[0];
+      tuning[tauSqIndx] = tauSqTuning_r;
       if(tuning[tauSqIndx] == 0){
 	fixed[tauSqIndx] = 1;
       }
     }
     
-    tuning[phiIndx] = REAL(phiTuning_r)[0];
+    tuning[phiIndx] = phiTuning_r;
     if(tuning[phiIndx] == 0){
       fixed[phiIndx] = 1;
     }
     
     if(covModel == "matern"){
-      tuning[nuIndx] = REAL(nuTuning_r)[0];
+      tuning[nuIndx] = nuTuning_r;
       if(tuning[nuIndx] == 0){
 	fixed[nuIndx] = 1;
       }
@@ -468,8 +455,10 @@ extern "C" {
     
     //make return object
     SEXP result_r, resultName_r;
+	double ** result_double_pp = NULL;
     int nResultListObjs = 2;
 
+	result_double_pp =(double**)malloc(3*sizeof(double*));
     if(amcmc){
       nResultListObjs++;
     }
@@ -480,13 +469,16 @@ extern "C" {
     //samples
     SET_VECTOR_ELT(result_r, 0, samples_r);
     SET_VECTOR_ELT(resultName_r, 0, mkChar("p.theta.samples")); 
+	result_double_pp[0] = REAL(samples_r);
 
     SET_VECTOR_ELT(result_r, 1, accept_r);
     SET_VECTOR_ELT(resultName_r, 1, mkChar("acceptance"));
+	result_double_pp[1] = REAL(accept_r);
 
     if(amcmc){
       SET_VECTOR_ELT(result_r, 2, tuning_r);
       SET_VECTOR_ELT(resultName_r, 2, mkChar("tuning"));
+	  result_double_pp[2] = REAL(tuning_r);
     }
 
     namesgets(result_r, resultName_r);
@@ -494,12 +486,7 @@ extern "C" {
     //unprotect
     UNPROTECT(nProtect);
     
-  print_spLM(REAL(Y_r), REAL(X_r), INTEGER(p_r)[0], INTEGER(n_r)[0], REAL(coordsD_r),
-	    CHAR(STRING_ELT(betaPrior_r,0)), betaNorm_r_0, betaNorm_r_1,REAL(sigmaSqIG_r),REAL(tauSqIG_r),REAL(nuUnif_r), REAL(phiUnif_r),
-	    REAL(phiStarting_r)[0], REAL(sigmaSqStarting_r)[0], REAL(tauSqStarting_r)[0], REAL(nuStarting_r)[0],
-	    REAL(phiTuning_r)[0], REAL(sigmaSqTuning_r)[0], REAL(tauSqTuning_r)[0], REAL(nuTuning_r)[0], 
-	    true, CHAR(STRING_ELT(covModel_r,0)), true, INTEGER(nBatch_r)[0], INTEGER(batchLength_r)[0], REAL(acceptRate_r)[0], INTEGER(verbose_r)[0], INTEGER(nReport_r)[0], "spLM_input_end.txt");
-
-    return(result_r);
+//    return(result_r);
+	return(result_double_pp);
   }
 }

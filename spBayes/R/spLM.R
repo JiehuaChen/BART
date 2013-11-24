@@ -98,6 +98,7 @@ spLM <- function(formula, data = parent.frame(), coords, knots,
           data used in the model formula")
   }
   
+  #Computes the inter-site Euclidean distance matrix for one or two sets of points.
   coords.D <- iDist(coords)
   storage.mode(coords.D) <- "double"
 
