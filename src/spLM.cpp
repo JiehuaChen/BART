@@ -18,7 +18,7 @@ double** spLM(double* Y_r, double* X_r, int p_r, int n_r, double* coordsD_r,
     /*****************************************
                 Common variables
     *****************************************/
-    int i, j, k, l, b, s, info, nProtect=0;
+    int i, j, k, l, b, s, info, nProtect=0, n_accept_r = 0;
     char const *lower = "L";
     char const *upper = "U";
     char const *nUnit = "N";
@@ -202,6 +202,7 @@ double** spLM(double* Y_r, double* X_r, int p_r, int n_r, double* coordsD_r,
       PROTECT(accept_r = allocMatrix(REALSXP, nParams, nBatch)); nProtect++; 
       PROTECT(tuning_r = allocMatrix(REALSXP, nParams, nBatch)); nProtect++; 
     }else{
+	  n_accept_r = floor(static_cast<double>(nSamples/nReport));
       PROTECT(accept_r = allocMatrix(REALSXP, 1, floor(static_cast<double>(nSamples/nReport)))); nProtect++; 
     }
 
@@ -459,6 +460,11 @@ double** spLM(double* Y_r, double* X_r, int p_r, int n_r, double* coordsD_r,
     int nResultListObjs = 2;
 
 	result_double_pp =(double**)malloc(3*sizeof(double*));
+	if(result_double_pp == NULL)
+	{
+		return NULL;
+	}
+
     if(amcmc){
       nResultListObjs++;
     }
@@ -469,24 +475,68 @@ double** spLM(double* Y_r, double* X_r, int p_r, int n_r, double* coordsD_r,
     //samples
     SET_VECTOR_ELT(result_r, 0, samples_r);
     SET_VECTOR_ELT(resultName_r, 0, mkChar("p.theta.samples")); 
-	result_double_pp[0] = REAL(samples_r);
+	result_double_pp[0] = (double*)malloc(nParams * nSamples * sizeof(double));
+	if(result_double_pp[0] == NULL)
+	{
+		free(result_double_pp);
+		return NULL;
+	}
+	for(i = 0;i < nParams;i++){
+		for(j = 0;j < nSamples;j++){
+			result_double_pp[0][i*nParams + j] = REAL(samples_r)[i*nParams + j];
+		}
+	}
 
     SET_VECTOR_ELT(result_r, 1, accept_r);
     SET_VECTOR_ELT(resultName_r, 1, mkChar("acceptance"));
-	result_double_pp[1] = REAL(accept_r);
 
     if(amcmc){
       SET_VECTOR_ELT(result_r, 2, tuning_r);
       SET_VECTOR_ELT(resultName_r, 2, mkChar("tuning"));
-	  result_double_pp[2] = REAL(tuning_r);
-    }
+	  result_double_pp[1] = (double*)malloc(nParams * nBatch * sizeof(double));
+	  if(result_double_pp[1] == NULL)
+	  {
+		free(result_double_pp[0]);
+		free(result_double_pp);
+	  	return NULL;
+	  }
+      for(i = 0;i < nParams;i++){
+          for(j = 0;j < nBatch;j++){
+          	result_double_pp[1][i*nParams + j] = REAL(accept_r)[i*nParams + j];
+          }
+      }
+	  result_double_pp[2] = (double*)malloc(nParams * nBatch * sizeof(double));
+	  if(result_double_pp[2] == NULL)
+	  {
+		free(result_double_pp[0]);
+		free(result_double_pp[1]);
+		free(result_double_pp);
+	  	return NULL;
+	  }
+      for(i = 0;i < nParams;i++){
+          for(j = 0;j < nBatch;j++){
+          	result_double_pp[2][i*nParams + j] = REAL(tuning_r)[i*nParams + j];
+          }
+      }
+    }else{
+	  result_double_pp[1] = (double*)malloc(n_accept_r * sizeof(double));
+	  if(result_double_pp[1] == NULL)
+	  {
+		free(result_double_pp[0]);
+		free(result_double_pp);
+	  	return NULL;
+	  }
+      for(i = 0;i < n_accept_r;i++){
+       	result_double_pp[1][i] = REAL(accept_r)[i];
+      }
+	  result_double_pp[2] = NULL;
+	}
 
     namesgets(result_r, resultName_r);
    
     //unprotect
     UNPROTECT(nProtect);
     
-//    return(result_r);
 	return(result_double_pp);
   }
 }

@@ -12,11 +12,11 @@ Requires 64-bit R to be installed on your system.
 2. cd bart/src
 3. on command line, type:
 
-[BayesTree/src]$ R CMD COMPILE mbart.cpp BirthDeath.cpp ChangeRule.cpp Funs.cpp Lib.cpp Likelihood.cpp List.cpp MuS.cpp Node.cpp Prior.cpp Rlob.cpp Swap.cpp
+[BayesTree/src]$ R CMD COMPILE mbart.cpp BirthDeath.cpp ChangeRule.cpp Funs.cpp Lib.cpp Likelihood.cpp List.cpp MuS.cpp Node.cpp Prior.cpp Rlob.cpp Swap.cpp spLM.cpp util.cpp
 
 4. on command line, type:
 
-[BayesTree/src]$ R CMD SHLIB mbart.cpp BirthDeath.cpp ChangeRule.cpp Funs.cpp Lib.cpp Likelihood.cpp List.cpp MuS.cpp Node.cpp Prior.cpp Rlob.cpp Swap.cpp
+[BayesTree/src]$ R CMD SHLIB mbart.cpp BirthDeath.cpp ChangeRule.cpp Funs.cpp Lib.cpp Likelihood.cpp List.cpp MuS.cpp Node.cpp Prior.cpp Rlob.cpp Swap.cpp spLM.cpp util.cpp
 
 This will build mbart.so in the bart/src directory. 
 You need to repeat steps 2 through 4 if you modify any .cpp files and want to rebuild the programs.
