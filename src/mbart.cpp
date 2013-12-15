@@ -108,14 +108,7 @@ extern "C" {
 	           int *iprintevery, int *ikeepevery, int *ikeeptrainfits,
 	           int *inumcut, int *iusequants, int *iprintcutoffs,
 	           int *verbose,
-	           double *sdraw, double *trdraw, double *tedraw, int *vcdraw, int *tsdraw,
-	           double* coordsD_r,
-	           double* sigmaSqIG_r, double* tauSqIG_r, double* nuUnif_r, double* phiUnif_r,
-	           double phiStarting_r, double sigmaSqStarting_r, double tauSqStarting_r, double nuStarting_r,
-	           double phiTuning_r, double sigmaSqTuning_r, double tauSqTuning_r, double nuTuning_r,
-	           bool nugget_r,
-	           std::string covModel_r, int nBatch_r, int batchLength_r) 
-	           
+	           double *sdraw, double *trdraw, double *tedraw, int *vcdraw, int *tsdraw)
 	{
 		Rprintf("\n\nStrat\n\n");
 		GetRNGstate();

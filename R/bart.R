@@ -19,7 +19,6 @@ bart = function(
       y.train = as.numeric(y.train)-1
    } else {
       if((length(unique(y.train)) == 2) & (max(y.train) == 1) & (min(y.train) == 0)) {
-         cat('NOTE: assumming numeric response is binary\n')
          binary = TRUE
       }
    }

@@ -1,61 +1,11 @@
-# # # # # # # # # # # #
-# Jiehua Chen
-# Oct. 15th, 2012
-# jc3288@columbia.edu
-# # # # # # # # # # # #
-
-#read in data
-setwd("../data")
-MIRdata <- read.csv("AfSIS-Core MIR first derivative.csv")
-MIRdata$PlotCultMgd <- ifelse(c(MIRdata$PlotCultMgd)==1, NA, MIRdata$PlotCultMgd)
-MIRdata$PlotCultMgd <- MIRdata$PlotCultMgd -2
-MIRdata$Depth.std <- c(MIRdata$Depth.std)
-
-#study of Total.Carbon
-
-bart.MIRdata <- cbind(MIRdata[, c("Total.Carbon", "PlotCultMgd", "pH")], MIRdata[,(129:1876)])
-bart.MIRdata.narm <- na.omit(bart.MIRdata)
-
-y <- bart.MIRdata.narm$Total.Carbon
-x <- as.matrix(bart.MIRdata.narm[,-1])
-
-# load revised BART C++ code
-setwd("../src")
-dyn.load("mbart.so")
-
-#set up folder to save the MCMC trees. You need to make sure that the folder is empty before running the following code.
-setwd("../MCMCresults") 
-  
-#run bart
-   x.train <- x
-   y.train <- y
-   #explanatory variables for test set
-   x.test=matrix(0.0,0,0)
-   sigdf=10
-   sigest=sd(y)
-   sigquant=.75 
-   k=3.0
-   power=2.0
-   base=.95
-   binaryOffset=0
+bart_saveresults <- function(x.train, y.train, x.test = matrix(0, 0, 0), sigest = NA, 
+    sigdf = 3, sigquant = 0.9, k = 2, power = 2, base = 0.95,
+    binaryOffset = 0, ntree = 200, ndpost = 1000, nskip = 100, 
+    printevery = 100, keepevery = 1, keeptrainfits = TRUE, usequants = FALSE, 
+    numcut = 100, printcutoffs = 0, verbose = TRUE, binary=FALSE) {
    
-   #number of trees
-   ntree=130
-    
-   #number of chains to skip before saving the results
-   ndpost=1000
-   nskip=100
-   printevery=100
-   keepevery=100
-   keeptrainfits=TRUE
-   #choice of cutting points
-   usequants=TRUE
-   numcut=100
-   printcutoffs=1
-   verbose=TRUE
-   #response is not binary 
-   binary=FALSE
-
+   binary =FALSE
+   
    if(is.factor(y.train)) {
       if(length(levels(y.train)) != 2) stop("y.train is a factor with number of levels != 2")
       binary = TRUE
@@ -117,19 +67,24 @@ setwd("../MCMCresults")
 
    rgy = range(y.train)
    y.train = -.5 + (y.train-rgy[1])/(rgy[2]-rgy[1])
-
+   if(!binary){
+		write.table(rgy, "rgy.txt", row.names=FALSE, col.names=FALSE, quote=FALSE)
+  	}
+  	if(binary){
+  		write.table(rep(binaryOffset, 2), "rgy.txt", row.names=FALSE, col.names=FALSE, quote=FALSE)
+  	}
    # if sigest=NA, fit a lm to training data to get the value of sigest...
    # sigest is on the scale of the transformed y, so we do the lm after the scaling above...
-   # if(!binary) {
-      # if (is.na(sigest)) {
-         # templm = lm(y~x.train) 
-         # sigest = summary(templm)$sigma
-      # } else {
-         # sigest = sigest/(rgy[2]-rgy[1]) #put input sigma estimate on transformed scale
-      # }
-   # } else {
-      # sigest=1
-   # }
+   if(!binary) {
+       if (is.na(sigest)) {
+          templm = lm(y.train~x.train) 
+          sigest = summary(templm)$sigma
+       } else {
+          sigest = sigest/(rgy[2]-rgy[1]) #put input sigma estimate on transformed scale
+       }
+    } else {
+       sigest=1
+    }
 
    ncskip = floor(nskip/keepevery)
    ncpost = floor(ndpost/keepevery)
@@ -147,7 +102,7 @@ setwd("../MCMCresults")
                    as.double(k),
 		   as.double(power), as.double(base),
 		   as.double(binaryOffset),
-		   as.integer(ntree),      as.integer(totnd),
+		   as.integer(ntree),      as.integer(totnd), as.integer(nskip),
                    as.integer(printevery), as.integer(keepevery),  as.integer(keeptrainfits),
                    as.integer(numcut), as.integer(usequants), as.integer(printcutoffs),
 		   as.integer(verbose),
@@ -192,7 +147,17 @@ setwd("../MCMCresults")
    }
 #number of times each variable used in each MCMC run
    varcount = matrix(cres$vcdraw,nrow=nctot,byrow=T)[(ncskip+1):nctot,]
-
-
-
-
+   if (binary) {
+        retval = list(call = match.call(), yhat.train = yhat.train, 
+            yhat.test = yhat.test, varcount = varcount, binaryOffset = binaryOffset)
+    }
+    else {
+        retval = list(call = match.call(), first.sigma = first.sigma, 
+            sigma = sigma, sigest = sigest, yhat.train = yhat.train, 
+            yhat.train.mean = yhat.train.mean, yhat.test = yhat.test, 
+            yhat.test.mean = yhat.test.mean, varcount = varcount, 
+            y = y.train)
+    }
+    class(retval) = "bart"
+    return(invisible(retval))
+}
