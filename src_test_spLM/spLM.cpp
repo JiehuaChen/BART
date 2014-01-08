@@ -11,7 +11,6 @@ extern "C" {
 #include <S.h>
 };
 #include "util.h"
-#include "spLM.h"
 
 
 #define Rprintf printf
@@ -25,7 +24,8 @@ void spLM(double* Y_r, int n_r, double* coordsD_r,
         bool nugget_r, std::string covModel_r, bool amcmc_r, 
         int nBatch_r, int batchLength_r, double acceptRate_r, 
 		int nParams, int sigmaSqIndx, int tauSqIndx, int phiIndx, int nuIndx,
-        int verbose, int nReport_r, double* spdraw, double* params) {
+        int verbose, int nReport_r, double* spdraw, double* spParams)
+{
 
 		/*****************************************
 		  Common variables
@@ -50,6 +50,9 @@ void spLM(double* Y_r, int n_r, double* coordsD_r,
 		double *Y = Y_r;
 		int n = n_r;
 		int nn = n*n;
+		double *coordsD = coordsD_r;
+
+		std::string covModel = covModel_r;
 
 		//priors
 		double sigmaSqIGa = sigmaSqIG_r[0]; double sigmaSqIGb = sigmaSqIG_r[1];
@@ -115,7 +118,8 @@ void spLM(double* Y_r, int n_r, double* coordsD_r,
 
 
         // the vector of parameters of the spatial model
-        double  *params = new double[nParam];
+
+        double  *params = new double[nParams];
 
 		//starting
 		params[sigmaSqIndx] = log(sigmaSqStarting_r);
@@ -169,12 +173,12 @@ void spLM(double* Y_r, int n_r, double* coordsD_r,
 		double *samples_r = new double[nParams * nSamples];
 		
 		if(amcmc){
-			double *accept_r = new double[nParams * nBatch];
-			double *tuning_r = new double[nParams * nBatch];
+		    n_accept_r = nParams * nBatch;
 		}else{
 			n_accept_r = floor(static_cast<double>(nSamples/nReport));
-			double *accept_r = new double[floor(static_cast<double>(nSamples/nReport))];
 		}
+        double *accept_r = new double[n_accept_r];
+        double *tuning_r = new double[n_accept_r];
 
 		/*****************************************
 		  Set-up MCMC alg. vars. matrices etc.
@@ -376,6 +380,8 @@ void spLM(double* Y_r, int n_r, double* coordsD_r,
 		//samples
         // params
 
+        spParams = params; 
+		
 		//simulated spatial process: last draw of spatial parameters
         sigmaSq = theta[0] = exp(params[sigmaSqIndx]);
         phi = theta[1] = logitInv(params[phiIndx], phiUnifa, phiUnifb);
@@ -389,21 +395,9 @@ void spLM(double* Y_r, int n_r, double* coordsD_r,
         }
 
         //construct covariance matrix: create the covariance matrix C
-        // C is a n(n-1)/2 by 1 array
-
-        spCovLT(coordsD, n, theta, covModel, C);
-        if(nugget){
-      	    for(k = 0; k < n; k++){
-                C[k*n+k] += tauSq[s];
-            }
-        } 
-        // cholesky decomposition of C
-        F77_NAME(dpotrf)(lower, &n, C, &n, &info); if(info != 0){error("c++ error: dpotrf failed\n");}//L_1
-
-		double *spdraw = new double[n];
-		int *betamu = new int[n]; zeros(betamu, n);
+		double *betamu = new double[n]; zeros(betamu, n);
         mvrnorm(spdraw, betamu, C, n);
-        
+
 		if(amcmc){
             for(j = 0;j < nParams;j++){
                 tuning[j] = exp(tuning[j]);
@@ -422,18 +416,18 @@ void spLM(double* Y_r, int n_r, double* coordsD_r,
                 tuning[nuIndx] = *nuTuning_r;
                 nuTuning_r = &tuning[nuIndx];
             }
-		}
 		//delete
         delete [] tuning;
         delete [] fixed;
         delete [] samples_r;
         delete [] accept_r;
-        delete [] turning_r;
+        delete [] tuning_r;
         delete [] paramsCurrent;
         delete [] accept;
         delete [] C;
         delete [] theta;
         delete [] vU;
         delete [] betamu;
+        }
 }
 

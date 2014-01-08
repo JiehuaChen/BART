@@ -1,5 +1,4 @@
 #include <string>
-
 extern "C" {
 #include <R.h>
 #include <Rmath.h>
@@ -7,140 +6,15 @@ extern "C" {
 #include <R_ext/Lapack.h>
 #include <R_ext/BLAS.h>
 #include <R_ext/Utils.h>
-};
-
+}
 #include "util.h"
-
-#define pi 3.1415926  
-#define rd (rand()/(RAND_MAX+1.0))  
-   
-double randone(double min, double max)  
-{  
-	return min+(max-min)*rand()/(RAND_MAX+1.0);  
-}  
-double normal(double x, double miu,double sigma)  
-{  
-	return 1.0/sqrt(2*pi)/sigma*exp(-1*(x-miu)*(x-miu)/(2*sigma*sigma));  
-}  
-
-double randn(double miu,double sigma, double min ,double max)  
-{  
-		double x,y,dScope;  
-		do{  
-				x=randone(min,max);  
-				y=normal(x,miu,sigma);  
-				dScope=randone(0.0,normal(miu,miu,sigma));  
-		}while(dScope>y);  
-		return x;  
-}  
-   
-double randn(int type)  
-{  
-		if (type==1)  
-				return rd+rd+rd+rd+rd+rd+rd+rd+rd+rd+rd+rd-6.0;  
-		else if(type==2)  
-				return sqrt(-2*log(rand()/(RAND_MAX+1.0)))*cos(2*pi*rand()/(RAND_MAX+1.0));  
-		else  
-		return randn(0.0,1.0,-10.0,10.0);  
-} 
-
-  int print_spLM(double* Y_r, double* X_r, int p_r, int n_r, double* coordsD_r,
-	    std::string betaPrior_r, double* betaNorm_r_0, double* betaNorm_r_1,double* sigmaSqIG_r, double* tauSqIG_r, double* nuUnif_r, double* phiUnif_r,
-	    double phiStarting_r, double sigmaSqStarting_r, double tauSqStarting_r, double nuStarting_r,
-	    double phiTuning_r, double sigmaSqTuning_r, double tauSqTuning_r, double nuTuning_r, 
-	    bool nugget_r, std::string covModel_r, bool amcmc_r, int nBatch_r, int batchLength_r, double acceptRate_r, int verbose_r, int nReport_r, const char *inpath){
-	int i,j;
-	std::string spLM_input_fileName(inpath);
-	FILE* spLM_input_file = fopen(spLM_input_fileName.c_str(),"w+t"); // overwrite mode
-	fprintf(spLM_input_file, "Y_r:\n");
-	for(i = 0;i < n_r;i++){
-			fprintf(spLM_input_file, "%.12lf\n", Y_r[i]);
-	}
-	fprintf(spLM_input_file, "X_r:\n");
-	for(i = 0;i < n_r;i++){
-			for(j = 0;j < p_r;j++){
-					fprintf(spLM_input_file, "%.12lf ", X_r[i*n_r+j]);
-			}
-			fprintf(spLM_input_file, "\n");
-	}
-	fprintf(spLM_input_file, "p_r: %d\n",p_r);
-	fprintf(spLM_input_file, "n_r: %d\n",n_r);
-
-	fprintf(spLM_input_file, "coordsD_r:\n");
-	for(i = 0;i < n_r;i++){
-			for(j = 0;j < n_r;j++){
-					fprintf(spLM_input_file, "%.12lf ", coordsD_r[i*n_r+j]);
-			}
-			fprintf(spLM_input_file, "\n");
-	}
-
-	fprintf(spLM_input_file, "betaPrior_r: %s\n", betaPrior_r.c_str());
-
-	fprintf(spLM_input_file, "sigmaSqIG_ra: %0.12lf\n", sigmaSqIG_r[0]);
-
-	fprintf(spLM_input_file, "sigmaSqIG_rb: %0.12lf\n", sigmaSqIG_r[1]);
-
-	fprintf(spLM_input_file, "tauSqIG_ra: %0.12lf\n", tauSqIG_r[0]);
-
-	fprintf(spLM_input_file, "tauSqIG_rb: %0.12lf\n", tauSqIG_r[1]);
-
-	fprintf(spLM_input_file, "nuUnif_ra: %0.12lf\n", nuUnif_r[0]);
-
-	fprintf(spLM_input_file, "nuUnif_rb: %0.12lf\n", nuUnif_r[1]);
-
-	fprintf(spLM_input_file, "phiUnif_ra: %0.12lf\n", phiUnif_r[0]);
-
-	fprintf(spLM_input_file, "phiUnif_rb: %0.12lf\n", phiUnif_r[1]);
-
-	fprintf(spLM_input_file,
-		    "phiStarting_r: %0.12lf\n"
-		    "sigmaSqStarting_r: %0.12lf\n"
-		    "tauSqStarting_r: %0.12lf\n"
-		    "nuStarting_r: %0.12lf\n"
-		    "phiTuning_r: %0.12lf\n"
-		    "sigmaSqTuning_r: %0.12lf\n"
-		    "tauSqTuning_r: %0.12lf\n"
-		    "nuTuning_r: %0.12lf\n"
-		    "nugget_r: %d\n"
-	            "covModel_r: %s\n"
-		    "amcmc_r: %d\n"
-		    "nBatch_r: %d\n"
-		    "batchLength_r: %d\n"
-		    "acceptRate_r: %0.12lf\n"
-		    "verbose_r: %d\n"
-		    "nReport_r: %d\n",
-//		    "betaNorm_ra: %d\n"
-//		    "betaNorm_rb: %d\n",
-			phiStarting_r,
-			sigmaSqStarting_r,
-			tauSqStarting_r,
-			nuStarting_r,
-			phiTuning_r,
-			sigmaSqTuning_r,
-			tauSqTuning_r,
-			nuTuning_r,
-			nugget_r,
-			covModel_r.c_str(),
-			amcmc_r,
-			nBatch_r,
-			batchLength_r,
-			acceptRate_r,
-			verbose_r,
-			nReport_r
-//			betaNorm_r_0,
-//			betaNorm_r_1
-			);
-
-	fclose(spLM_input_file);
-    return 0;
-  }
 
 void mvrnorm(double *des, double *mu, double *cholCov, int dim){
   
   int i;
   int inc = 1;
   double one = 1.0;
-//  double zero = 0.0;
+  double zero = 0.0;
   
   //make some std norm draws
   for(i = 0; i < dim; i++)
@@ -159,7 +33,7 @@ void mvrnorm(double *des, double *mu, double *cholCov, int dim, bool upper){
   int i;
   int inc = 1;
   double one = 1.0;
-//  double zero = 0.0;
+  double zero = 0.0;
   
   //make some std norm draws
   for(i = 0; i < dim; i++)
@@ -176,27 +50,6 @@ void mvrnorm(double *des, double *mu, double *cholCov, int dim, bool upper){
 
 }
 
-SEXP getList(SEXP list, const char *str){
-  SEXP elmt = R_NilValue, names = getAttrib(list, R_NamesSymbol);
-  int i;
-  
-  for (i = 0; i < length(list); i++)
-    if(strcmp(CHAR(STRING_ELT(names, i)), str) == 0) {
-      elmt = VECTOR_ELT(list, i);
-      break;
-    }
-  
-  if(elmt == R_NilValue){
-    Rprintf("\nlist element %s not found\n", str);
-  }
-
-  return elmt;
-}
-
-SEXP getGetList(SEXP list, const char *str1, const char *str2){
-  SEXP list2 = getList(list, str1);
-  return getList(list2, str2);  
-}
 
 
 void zeros(double *x, int length){
