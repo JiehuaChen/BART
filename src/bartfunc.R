@@ -109,7 +109,9 @@ bart_saveresults <- function(x.train, y.train, x.test = matrix(0, 0, 0), sigest 
                    sdraw=double(nctot), 
                    trdraw=double(nrow(x.train)*nctot),
                    tedraw=double(nrow(x.test)*nctot),
-                   vcdraw=integer(ncol(x.train)*nctot), tsdraw = integer(ntree*nctot))
+                   vcdraw=integer(ncol(x.train)*nctot), tsdraw = integer(ntree*nctot),
+                   
+                   )
 	
    # now read in the results...
    #posterior for sigma: error term

@@ -1,18 +1,18 @@
 #include <string>
+
+extern "C"{
 #include <R.h>
 #include <Rmath.h>
 #include <Rinternals.h>
 #include <R_ext/Lapack.h>
 #include <R_ext/BLAS.h>
 #include <R_ext/Utils.h>
+};
 
 void mvrnorm(double *des, double *mu, double * cholCov, int dim);
 
 void mvrnorm(double *des, double *mu, double * cholCov, int dim, bool upper);
 
-SEXP getList(SEXP list, const char *str);
-
-SEXP getGetList(SEXP list, const char *str1, const char *str2);
 
 void zeros(double *x, int length);
 

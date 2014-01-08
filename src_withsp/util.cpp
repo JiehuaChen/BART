@@ -1,10 +1,12 @@
 #include <string>
+extern "C" {
 #include <R.h>
 #include <Rmath.h>
 #include <Rinternals.h>
 #include <R_ext/Lapack.h>
 #include <R_ext/BLAS.h>
 #include <R_ext/Utils.h>
+}
 #include "util.h"
 
 void mvrnorm(double *des, double *mu, double *cholCov, int dim){
@@ -48,27 +50,6 @@ void mvrnorm(double *des, double *mu, double *cholCov, int dim, bool upper){
 
 }
 
-SEXP getList(SEXP list, const char *str){
-  SEXP elmt = R_NilValue, names = getAttrib(list, R_NamesSymbol);
-  int i;
-  
-  for (i = 0; i < length(list); i++)
-    if(strcmp(CHAR(STRING_ELT(names, i)), str) == 0) {
-      elmt = VECTOR_ELT(list, i);
-      break;
-    }
-  
-  if(elmt == R_NilValue){
-    Rprintf("\nlist element %s not found\n", str);
-  }
-
-  return elmt;
-}
-
-SEXP getGetList(SEXP list, const char *str1, const char *str2){
-  SEXP list2 = getList(list, str1);
-  return getList(list2, str2);  
-}
 
 
 void zeros(double *x, int length){

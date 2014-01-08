@@ -25,11 +25,18 @@
 #include <string>
 
 
-
 extern "C" {
+#include <R_ext/Print.h>
+#include <Rinternals.h>
+#include <R_ext/Linpack.h>
+#include <R_ext/Lapack.h>
+#include <R_ext/BLAS.h>
 #include <R.h>
 #include <Rmath.h>
+#include <S.h>
 };
+
+    
 
 #include "global.h"
 #include "Node.h"
@@ -37,14 +44,7 @@ extern "C" {
 #include "Prior.h"
 #include "MuS.h"
 #include "Sdev.h"
-
-extern "C" {
-	void F77_NAME(dcopy)(const int *n, const double *dx, const int *incx, double *dy, const int *incy);
-	void F77_NAME(daxpy)(const int *n, const double *alpha, const double *dx, const int *incx,
-	                     double *dy, const int *incy);
-	double F77_NAME(ddot)(const int *n, const double *dx,
-	                      const int *incx, const double *dy, const int *incy);
-};
+#include "spLM.h"
 
 
 int num_digits(const int number);
@@ -64,7 +64,7 @@ int *VarType; // for each variable tell what kind, CAT or ORD
 int NumObs; // number of observations
 double **XDat; // x data, note: cats are double
 double **YDat; // y data, note: cats are double
-double* YDat1=0;	// y data with just one y
+double *YDat1=0;	// y data with just one y
 double **XDatR;	// x data, used in regression model
 int NumXR;		// number of columns in XDatR
 double* weights;
@@ -96,6 +96,7 @@ inline std::vector<std::string> glob(const std::string& pat){
     return ret;
 }
 
+
 extern "C" {
 	void mbart(int *iNumObs, int *iNumX, int *inrowTest,
 	           double *iXDat, double *iYDat,
@@ -108,8 +109,16 @@ extern "C" {
 	           int *iprintevery, int *ikeepevery, int *ikeeptrainfits,
 	           int *inumcut, int *iusequants, int *iprintcutoffs,
 	           int *verbose,
-	           double *sdraw, double *trdraw, double *tedraw, int *vcdraw, int *tsdraw)
-	{
+	           double *sdraw, double *trdraw, double *tedraw, int *vcdraw, int *tsdraw,
+               double *coordsD_r, 
+               double *sigmaSqIG_r, double *tauSqIG_r, double *nuUnif_r, 
+               double *phiUnif_r, double *phiStarting_o, double *sigmaSqStarting_o, 
+               double *tauSqStarting_o, double *nuStarting_o, double *phiTuning_r, 
+               double *sigmaSqTuning_r, double *tauSqTuning_r, double *nuTuning_r, 
+               char *covModel_r, bool *amcmc_o, 
+               int *nBatch_o, int *batchLength_o, double *acceptRate_o, 
+               int *nReport_o, double *spParams)
+    {
 		Rprintf("\n\nStrat\n\n");
 		GetRNGstate();
         
@@ -153,6 +162,24 @@ extern "C" {
 		if(!(*iusequants)) usequants=false;
 		int printcutoffs = *iprintcutoffs;
 
+        // no nugget for the spatial model
+        int nugget_r = 0;
+		std::string covModel(covModel_r);
+		double *coordsD = coordsD_r;
+
+
+		bool amcmc_r = *amcmc_o;
+		int nBatch_r = *nBatch_o;
+		// number of MCMC samplings
+		int batchLength_r = *batchLength_o;
+		double acceptRate_r = *acceptRate_o;
+		int nReport_r = *nReport_o;
+        // starting values
+        double phiStarting_r = *phiStarting_o;
+        double sigmaSqStarting_r = *sigmaSqStarting_o; 
+        double tauSqStarting_r = *tauSqStarting_o;
+        double nuStarting_r = *nuStarting_o;
+
 		//note: the meaning of kfac is different for binary y
 		//  for numeric y, it is standardized so E(Y) is probably in (-.5,.5)
 		//  for binary y, it is in (-3,3)
@@ -192,14 +219,18 @@ extern "C" {
 
 		Ivec = new int[NumObs+1];
 		for(int i=1; i<=NumObs; i++) Ivec[i]=i;
+		
+		// NumY number of columns of Y;
+		// NumX number of columns of X;
 		NumY=1;
 
 		XDat = Lib::almat(NumObs,NumX);
 		YDat = Lib::almat(NumObs,NumY); //note: for binary y this the 0-1 y (never changes), for continuous never used
-		YDat1 = new double[NumObs+1];//used for resids in backfitting
-		double *Y = new double[NumObs+1];//used for y in numeric, latent - binary_offset for binary y
+		YDat1 = new double[NumObs+1]; //used for resids in backfitting
+		double *Y = new double[NumObs+1]; //used for y in numeric, latent - binary_offset for binary y
 
 		// read in data
+		// Y, YDat1 have length NumObs+1; and YDat has the length NumObs
 		int tcnt = 0;
 		for(int j=1; j<=NumX; j++) {
 			for(int i=1; i<=NumObs; i++) {
@@ -225,6 +256,7 @@ extern "C" {
 				tcnt++;
 			}
 		}
+
 
 		//output the XDat, YDat and Y to files for testing predict
 
@@ -388,6 +420,39 @@ extern "C" {
 		mfits[1] = new double[NumObs+1];
 		mfits[2] = new double[nrowTest+1];
 
+
+		bool nugget = nugget_r;
+		double tauSqIGa = 0, tauSqIGb = 0;
+		if(nugget){
+			tauSqIGa = tauSqIG_r[0]; tauSqIGb = tauSqIG_r[1]; 
+		}
+		//matern
+		double nuUnifa = 0, nuUnifb = 0;
+		if(covModel == "matern"){
+			nuUnifa = nuUnif_r[0]; nuUnifb = nuUnif_r[1]; 
+		}		
+		
+		int nParams, sigmaSqIndx, tauSqIndx, phiIndx, nuIndx;
+
+		if(!nugget && covModel != "matern"){
+			nParams = 2;//sigma^2, phi
+			sigmaSqIndx = 0; phiIndx = 1;
+		}else if(nugget && covModel != "matern"){
+			nParams = 3;//sigma^2, tau^2, phi
+			sigmaSqIndx = 0; tauSqIndx = 1; phiIndx = 2;
+		}else if(!nugget && covModel == "matern"){
+			nParams = 3;//sigma^2, phi, nu
+			sigmaSqIndx = 0; phiIndx = 1; nuIndx = 2;
+		}else{
+			nParams = 4;//sigma^2, tau^2, phi, nu
+			sigmaSqIndx = 0; tauSqIndx = 1; phiIndx = 2; nuIndx = 3;//sigma^2, tau^2, phi, nu
+		}
+        
+		double* spdraw = new double[NumObs];
+		// invariant: the rows sums of mtrainFits must be this mtotalfit
+		for(int i=0; i<NumObs; i++) spdraw[i]=0.0;
+         
+
 		int scnt=0;    // count draws of sigma
 		int trcnt=0;   // count draws of train fits
 		int tecnt=0;   // count draws of test  fits
@@ -396,6 +461,7 @@ extern "C" {
 		int vcnt=0;    // count draws of var counts
 		int sdnt=0;    // count draws of tree sizes
 		int inc=1;
+		int spnt = 0; // count draws of sp parameters
 		double mone=-1.0;
 		double pone=1.0;
 		double *onev = new double[NTree+1];
@@ -427,15 +493,14 @@ extern "C" {
 
 		if(*verbose) Rprintf("Running mcmc loop:\n");
 		for (int k=1; k<=ndPost; k++) {
+            F77_CALL(dcopy)(&NumObs,Y+1,&inc,YDat1+1,&inc); //copy Y into YDat1
+            F77_CALL(daxpy)(&NumObs,&mone,spdraw,&inc,YDat1+1,&inc); //subtract the spatial process draw from YDat1
+			
 			//if(k%printevery== 0) std::cout << "iteration: " << k << " (of " << ndPost << ")" << std::endl;
 			if(*verbose && (k%printevery== 0)) Rprintf("iteration: %d (of %d)\n",k,ndPost);
 			int treen=0;
 			for(nvs i=1; i<theTrees.size(); i++) {
-				//for(int j=1;j<=NumObs;j++) {
-				//YDat1[j] = Y[j]-mtotalfit[j]+mtrainFits[i][j];
-				//}
 				treen++;
-				F77_CALL(dcopy)(&NumObs,Y+1,&inc,YDat1+1,&inc); //copy Y into YDat1
 				F77_CALL(daxpy)(&NumObs,&mone,mtotalfit+1,&inc,YDat1+1,&inc); //subtract mtotalfit from YDat1
 				F77_CALL(daxpy)(&NumObs,&pone,mtrainFits[i]+1,&inc,YDat1+1,&inc);//add mtrainFits[i]
 				alpha =  Metrop(&theTrees[i],&Done,&step);
@@ -448,33 +513,28 @@ extern "C" {
 					    datafile = fopen(fn_ss.str().c_str(),"a+t"); // append mode
 					    fprintf(datafile, " Tree%d", treen);
 					    fprintf(datafile,"\n");
-//					fprintf(datafile,"YDat1:");
-//					for(int ii = 1; ii <= NumObs; ii++)
-//					{
-//						fprintf(datafile," %f",YDat1[ii]);
-//					}
-//					fprintf(datafile,"\n");
-					theTrees[i]->PrintTree(datafile);
-					fclose (datafile);
-					fn_ss.str("");
-				    }
-				} else {
+                        theTrees[i]->PrintTree(datafile);
+                        fclose (datafile);
+                        fn_ss.str("");
+                    }
+                } else {
 					theTrees[i]->currentFits(&mu,NumObs,XDat,YDat1,0,XTest,weights,mfits);
 				}
-
-				//for(int j=1;j<=NumObs;j++) mtotalfit[j] += (mfits[1][j]-mtrainFits[i][j]);
 				F77_CALL(daxpy)(&NumObs,&mone,mtrainFits[i]+1,&inc,mtotalfit+1,&inc);//sub old fits
 				F77_CALL(daxpy)(&NumObs,&pone,mfits[1]+1,&inc,mtotalfit+1,&inc); //add new fits
-				//for(int j=1;j<=NumObs;j++) mtrainFits[i][j] = mfits[1][j];
 				F77_CALL(dcopy)(&NumObs,mfits[1]+1,&inc,mtrainFits[i]+1,&inc);
 				for(int j=1; j<=nrowTest; j++) mtestFits[j][i] = mfits[2][j];
-				//F77_CALL(dcopy)(&NumObs,mfits[2]+1,&inc,mtestFits[i]+1,&inc);
 			}
-			//for(int m=1;m<=NumObs;m++)
-			//   eps[m]=YDat[m][1]-mtotalfit[m];
 			if(!binary) {
 				F77_CALL(dcopy)(&NumObs,Y+1,&inc,eps+1,&inc);
 				F77_CALL(daxpy)(&NumObs,&mone,mtotalfit+1,&inc,eps+1,&inc);
+
+				// eps: residuals from 1 to NumObs+1
+                spLM(eps+1, NumObs, coordsD_r, sigmaSqIG_r, tauSqIG_r, nuUnif_r, phiUnif_r, phiStarting_r,  sigmaSqStarting_r, tauSqStarting_r,  nuStarting_r,
+                        phiTuning_r, sigmaSqTuning_r,  tauSqTuning_r,  nuTuning_r, nugget_r,  covModel,  amcmc_r, nBatch_r,  batchLength_r,  acceptRate_r,
+                         nParams, sigmaSqIndx, tauSqIndx, phiIndx, nuIndx, 
+                        *verbose,  nReport_r, spdraw, spParams);
+				F77_CALL(daxpy)(&NumObs,&mone,spdraw,&inc,eps+1,&inc); //subtract spdraw from eps                
 				sd.setData(NumObs,eps);
 				sd.drawPost();
 				mu.setSigma(sd.getS());
@@ -500,9 +560,6 @@ extern "C" {
 					}
 				}
 				for(int i=1; i<=nrowTest; i++) {
-					//sum=0.0;
-					//for(int j=1;j<=NTree;j++) sum += mtestFits[i][j];
-					//tedraw[tecnt] = sum; tecnt++;
 					tedraw[tecnt++] = F77_CALL(ddot)(&NTree,onev+1,&inc,mtestFits[i]+1,&inc);
 				}
 				if(!binary) sdraw[scnt] = sd.getS();
@@ -516,6 +573,10 @@ extern "C" {
 					tsdraw[sdnt] = theTrees[i]->NumBotNodes();
 					sdnt++;
 				}
+                for(int i=i; i<nParams; i++) {
+                    spdraw[spnt] = spParams[i];
+                    spnt++;
+                }
 			}
 		}
 		int time2 = time(&tp);
@@ -563,7 +624,7 @@ extern "C" {
 		delete [] mfits[1];
 		delete [] mfits[2];
 		delete [] mfits;
-
+        delete [] spdraw;
 		PutRNGstate();
 	}
 };

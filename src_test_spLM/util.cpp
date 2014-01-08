@@ -1,10 +1,14 @@
 #include <string>
+
+extern "C" {
 #include <R.h>
 #include <Rmath.h>
 #include <Rinternals.h>
 #include <R_ext/Lapack.h>
 #include <R_ext/BLAS.h>
 #include <R_ext/Utils.h>
+};
+
 #include "util.h"
 
 #define pi 3.1415926  

@@ -60,8 +60,8 @@ testSPLM::~testSPLM()
 int testSPLM::start(string inputfilename)
 {
 	GetTestData(inputfilename);
-    spLM( Y_r, X_r, p_r,  n_r,  coordsD_r, 
-	      betaPrior_r, betaNorm_r, sigmaSqIG_r,  tauSqIG_r,  nuUnif_r, phiUnif_r,
+    spLM( Y_r, n_r,  coordsD_r, 
+	      sigmaSqIG_r,  tauSqIG_r,  nuUnif_r, phiUnif_r,
 		  phiStarting_r,  sigmaSqStarting_r, tauSqStarting_r,  nuStarting_r,
 		  phiTuning_r, sigmaSqTuning_r,  tauSqTuning_r,  nuTuning_r, 
 	      nugget_r,  covModel_r,  amcmc_r, nBatch_r,  batchLength_r,  acceptRate_r, 
@@ -88,7 +88,6 @@ int testSPLM::GetTestData(string infile)
 		{
 				//printf("Oneline: %s\n",s_oneline.c_str());
 		    	string::size_type l_pos = 0, r_pos = 0;
-
 		    	r_pos = s_oneline.find_first_of(':',l_pos);
 		    	if(r_pos != string::npos)
 		    	{
@@ -113,29 +112,6 @@ int testSPLM::GetTestData(string infile)
 										printf("%0.12lf\n",Y_r[i]);
 								}
 								continue;
-						}else if(0 == param.compare("X_r")){
-								i = 0;
-								getline(ifile, s_oneline);
-								while(!ifile.eof()){
-                                        l_pos = 0; r_pos = 0;
-										r_pos = s_oneline.find_first_of(':',l_pos);
-										if(r_pos == string::npos) {
-												X_r[i] = atof(s_oneline.c_str());
-												i++;
-										}
-										else{
-												break;
-										}
-										getline(ifile, s_oneline);
-								}
-								printf("X_r:\n");
-								for(i = 0;i < DIMENSION; i++){
-										printf("%0.12lf \n",X_r[i]);
-								}
-								continue;
-						}else if(0 == param.compare("p_r")){
-								p_r = atoi(s_oneline.substr(r_pos+2,s_oneline.size()).c_str());
-								printf("p_r: %d\n",p_r);
 						}else if(0 == param.compare("n_r")){
 								n_r = atoi(s_oneline.substr(r_pos+2,s_oneline.size()).c_str());
 								printf("n_r: %d\n",n_r);
@@ -169,9 +145,6 @@ int testSPLM::GetTestData(string infile)
 //										printf("\n");
 //								}
 								continue;
-						}else if(0 == param.compare("betaPrior_r")){
-								betaPrior_r = s_oneline.substr(r_pos+2,s_oneline.size());
-								printf("betaPrior_r: %s\n", betaPrior_r.c_str());
 						}else if(0 == param.compare("sigmaSqIG_ra")){
 								sigmaSqIG_r[0] = atof(s_oneline.substr(r_pos+2,s_oneline.size()).c_str());
 								printf("sigmaSqIG_ra: %0.12lf\n", sigmaSqIG_r[0]);
@@ -244,13 +217,7 @@ int testSPLM::GetTestData(string infile)
 						}else if(0 == param.compare("nReport_r")){
 							    nReport_r = atoi(s_oneline.substr(r_pos+2,s_oneline.size()).c_str());
 								printf("nReport_r: %d\n",nReport_r );
-						}else if(0 == param.compare("betaNorm_ra")){
-							  //  betaNorm_r[0] = atoi(s_oneline.substr(r_pos+2,s_oneline.size()).c_str());
-							//	printf("betaNorm_ra: %d\n",betaNorm_r[0]);
-						}else if(0 == param.compare("betaNorm_rb")){
-							  //  betaNorm_r[1] = atoi(s_oneline.substr(r_pos+2,s_oneline.size()).c_str());
-							//    printf("betaNorm_rb: %d\n",betaNorm_r[1]);
-						}
+                        }
 				}
 				getline(ifile, s_oneline);
 		}

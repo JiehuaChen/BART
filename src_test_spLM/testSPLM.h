@@ -17,11 +17,8 @@ class testSPLM {
 		int GetRangeData(string infile);
 
 		double Y_r[DIMENSION];
-		double X_r[DIMENSION];
-		int p_r;
 		int n_r;
 		double *coordsD_r; 
-		std::string betaPrior_r;
 		double sigmaSqIG_r[2];
 		double tauSqIG_r[2];
 		double nuUnif_r[2]; 
@@ -42,7 +39,6 @@ class testSPLM {
 		double acceptRate_r; 
 		int verbose_r;
 		int nReport_r;
-		double **betaNorm_r;
 		double **result;
 
 };
