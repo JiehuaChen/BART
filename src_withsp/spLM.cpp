@@ -13,7 +13,6 @@ extern "C" {
 #include "util.h"
 
 
-#define Rprintf printf
 #define R_alloc calloc
 
 void spLM(double* Y_r, int n_r, double* coordsD_r, 
@@ -79,44 +78,11 @@ void spLM(double* Y_r, int n_r, double* coordsD_r,
 		int nSamples = nBatch*batchLength;
 		int nReport = nReport_r;
 
-		// if(verbose){
-		// 	Rprintf("----------------------------------------\n");
-		// 	Rprintf("\tGeneral model description\n");
-		// 	Rprintf("----------------------------------------\n");
-		// 	Rprintf("Model fit with %i observations.\n\n", n);
-		// 	Rprintf("Using the %s spatial correlation model.\n\n", covModel.c_str());
-
-		// 	if(amcmc){
-		// 		Rprintf("Using adaptive MCMC.\n\n");
-		// 		Rprintf("\tNumber of batches %i.\n", nBatch);
-		// 		Rprintf("\tBatch length %i.\n", batchLength);
-		// 		Rprintf("\tTarget acceptance rate %.5f.\n", acceptRate);
-		// 		Rprintf("\n");
-		// 	}else{
-		// 		Rprintf("Number of MCMC samples %i.\n\n", nSamples);
-		// 	}
-
-		// 	if(!nugget){
-		// 		Rprintf("tau.sq not included in the model (i.e., no nugget model).\n\n");
-		// 	}
-
-		// 	Rprintf("Priors and hyperpriors:\n");
-		// 	Rprintf("\tsigma.sq IG hyperpriors shape=%.5f and scale=%.5f\n", sigmaSqIGa, sigmaSqIGb);
-		// 	if(nugget){
-		// 		Rprintf("\ttau.sq IG hyperpriors shape=%.5f and scale=%.5f\n", tauSqIGa, tauSqIGb); 
-		// 	}
-		// 	Rprintf("\tphi Unif hyperpriors a=%.5f and b=%.5f\n", phiUnifa, phiUnifb);
-		// 	if(covModel == "matern"){
-		// 		Rprintf("\tnu Unif hyperpriors a=%.5f and b=%.5f\n", nuUnifa, nuUnifb);	  
-		// 	}
-		// } 
 
 		/*****************************************
 		  Set-up MCMC sample matrices etc.
 		 *****************************************/ 
 		//parameters: nParams number of parameters
-
-
         // the vector of parameters of the spatial model
 
         double  *params = new double[nParams];
@@ -129,7 +95,7 @@ void spLM(double* Y_r, int n_r, double* coordsD_r,
 		}
 
 		params[phiIndx] = logit(phiStarting_r, phiUnifa, phiUnifb);
-
+        
 		if(covModel == "matern"){
 			params[nuIndx] = logit(nuStarting_r, nuUnifa, nuUnifb);
 		}
@@ -394,9 +360,21 @@ void spLM(double* Y_r, int n_r, double* coordsD_r,
             nu = theta[2] = logitInv(params[nuIndx], nuUnifa, nuUnifb);
         }
 
+        
         //construct covariance matrix: create the covariance matrix C
+        spCovLT(coordsD, n, theta, covModel, C);
+
+        if(nugget){
+            for(k = 0; k < n; k++){
+                C[k*n+k] += tauSq;
+            }
+        }
+
 		double *betamu = new double[n]; zeros(betamu, n);
         mvrnorm(spdraw, betamu, C, n);
+        
+        Rprintf("%3.2f\n", spdraw[0]);
+        
 
 		if(amcmc){
             for(j = 0;j < nParams;j++){

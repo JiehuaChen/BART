@@ -115,7 +115,7 @@ extern "C" {
                double *phiUnif_r, double *phiStarting_o, double *sigmaSqStarting_o, 
                double *tauSqStarting_o, double *nuStarting_o, double *phiTuning_r, 
                double *sigmaSqTuning_r, double *tauSqTuning_r, double *nuTuning_r, 
-               char *covModel_r, bool *amcmc_o, 
+               char **covModel_r, bool *amcmc_o, 
                int *nBatch_o, int *batchLength_o, double *acceptRate_o, 
                int *nReport_o, double *spParams)
     {
@@ -164,11 +164,16 @@ extern "C" {
 
         // no nugget for the spatial model
         int nugget_r = 0;
-		std::string covModel(covModel_r);
+
+		std::string covModel(*covModel_r);
+
+        Rprintf("\n%s\n", covModel.c_str());
+		
 		double *coordsD = coordsD_r;
 
-
 		bool amcmc_r = *amcmc_o;
+		Rprintf("%i\n", amcmc_r);
+
 		int nBatch_r = *nBatch_o;
 		// number of MCMC samplings
 		int batchLength_r = *batchLength_o;
@@ -534,7 +539,14 @@ extern "C" {
                         phiTuning_r, sigmaSqTuning_r,  tauSqTuning_r,  nuTuning_r, nugget_r,  covModel,  amcmc_r, nBatch_r,  batchLength_r,  acceptRate_r,
                          nParams, sigmaSqIndx, tauSqIndx, phiIndx, nuIndx, 
                         *verbose,  nReport_r, spdraw, spParams);
+                Rprintf("%3.2f\n", spdraw[0]);
+                Rprintf("%3.2f\n", eps[0]);
+                
+                Rprintf("%3.2f\n", eps[1]);
+
 				F77_CALL(daxpy)(&NumObs,&mone,spdraw,&inc,eps+1,&inc); //subtract spdraw from eps                
+                Rprintf("%3.2f\n", eps[1]);
+				
 				sd.setData(NumObs,eps);
 				sd.drawPost();
 				mu.setSigma(sd.getS());
