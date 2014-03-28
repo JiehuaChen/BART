@@ -136,17 +136,4 @@ Summing up all the mu values gives you the final answer.
 
 
 
-> OBJECTIVE
-
-Part I: Modify mbart.cpp such that the trees which are currently being printed will be saved to disk. The files on disk should also include the mu values for the leaves. (At the moment, we are not clear about where these mu values are being stored --- Node::PrintTree() does not reveal their values.)
-
-Part II: Write an auxiliary program forest_action.cpp that takes two arguments:
-	a. A forest of trees from disk (one of the files from Part I) 
-	b. A vector of numbers
-and then performs the action of the forest on this vector, returning the corresponding sum of mu values. This action of a vector onto a tree is already computed somehow in Node::currentFits(), so you do not have to write it from scratch.
-	
-Note 1: We need to develop a basic understanding of the code structure.
-Note 2: Since Part II requires using the trees saved in Part I, it is important to save the trees in a format that allows them to be easily reconstructed in Part II. Pre-order traversal is one way to go. (http://leetcode.com/2010/09/saving-binary-search-tree-to-file.html) 
-
-
-- William Wu, 2013-01-08
+ William Wu, 2013-01-08
