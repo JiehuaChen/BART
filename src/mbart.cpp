@@ -563,7 +563,7 @@ extern "C" {
 		delete [] mfits[1];
 		delete [] mfits[2];
 		delete [] mfits;
-
+		delete [] spParams;
 		PutRNGstate();
 	}
 };

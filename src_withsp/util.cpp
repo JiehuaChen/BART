@@ -509,7 +509,7 @@ void spCovLT(double *D, int n, double *theta, std::string &covModel, double *C){
     
     for(i = 0; i < n; i++){
       for(j = i; j < n; j++){ 
-	C[i*n+j] = theta[0]*exp(-1.0*theta[1]*D[i*n+j]);
+          C[i*n+j] = theta[0]*exp(-1.0*theta[1]*D[i*n+j]);
       }
     }
     

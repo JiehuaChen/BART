@@ -117,7 +117,7 @@ extern "C" {
                double *sigmaSqTuning_r, double *tauSqTuning_r, double *nuTuning_r, 
                char **covModel_r, bool *amcmc_o, 
                int *nBatch_o, int *batchLength_o, double *acceptRate_o, 
-               int *nReport_o, double *spParams)
+               int *nReport_o, double *sppdraw)
     {
 		Rprintf("\n\nStrat\n\n");
 		GetRNGstate();
@@ -163,7 +163,7 @@ extern "C" {
 		int printcutoffs = *iprintcutoffs;
 
         // no nugget for the spatial model
-        int nugget_r = 0;
+        int nugget_r = 1;
 
 		std::string covModel(*covModel_r);
 
@@ -180,10 +180,7 @@ extern "C" {
 		double acceptRate_r = *acceptRate_o;
 		int nReport_r = *nReport_o;
         // starting values
-        double phiStarting_r = *phiStarting_o;
-        double sigmaSqStarting_r = *sigmaSqStarting_o; 
         double tauSqStarting_r = *tauSqStarting_o;
-        double nuStarting_r = *nuStarting_o;
 
 		//note: the meaning of kfac is different for binary y
 		//  for numeric y, it is standardized so E(Y) is probably in (-.5,.5)
@@ -204,6 +201,9 @@ extern "C" {
 		double qchi = qchisq(1.0-sigquant,dsigdf,1,0);
 		lambda = (sigma*sigma*qchi)/dsigdf;
 
+        sigmaSqIG_r[0] = sigdf;
+        sigmaSqIG_r[1] = lambda;
+        
 		if(*verbose) {
 			Rprintf("number of trees: %d\n",NTree);
 			Rprintf("Prior:\n");
@@ -454,6 +454,8 @@ extern "C" {
 		}
         
 		double* spdraw = new double[NumObs];
+        double* spParams = new double[nParams];
+		
 		// invariant: the rows sums of mtrainFits must be this mtotalfit
 		for(int i=0; i<NumObs; i++) spdraw[i]=0.0;
          
@@ -498,14 +500,14 @@ extern "C" {
 
 		if(*verbose) Rprintf("Running mcmc loop:\n");
 		for (int k=1; k<=ndPost; k++) {
-            F77_CALL(dcopy)(&NumObs,Y+1,&inc,YDat1+1,&inc); //copy Y into YDat1
-            F77_CALL(daxpy)(&NumObs,&mone,spdraw,&inc,YDat1+1,&inc); //subtract the spatial process draw from YDat1
 			
 			//if(k%printevery== 0) std::cout << "iteration: " << k << " (of " << ndPost << ")" << std::endl;
 			if(*verbose && (k%printevery== 0)) Rprintf("iteration: %d (of %d)\n",k,ndPost);
 			int treen=0;
 			for(nvs i=1; i<theTrees.size(); i++) {
 				treen++;
+                F77_CALL(dcopy)(&NumObs,Y+1,&inc,YDat1+1,&inc); //copy Y into YDat1
+                F77_CALL(daxpy)(&NumObs,&mone,spdraw,&inc,YDat1+1,&inc); //subtract the spatial process draw from YDat1
 				F77_CALL(daxpy)(&NumObs,&mone,mtotalfit+1,&inc,YDat1+1,&inc); //subtract mtotalfit from YDat1
 				F77_CALL(daxpy)(&NumObs,&pone,mtrainFits[i]+1,&inc,YDat1+1,&inc);//add mtrainFits[i]
 				alpha =  Metrop(&theTrees[i],&Done,&step);
@@ -534,22 +536,25 @@ extern "C" {
 				F77_CALL(dcopy)(&NumObs,Y+1,&inc,eps+1,&inc);
 				F77_CALL(daxpy)(&NumObs,&mone,mtotalfit+1,&inc,eps+1,&inc);
 
+                Rprintf("sigmasq %3.2f\n", *sigmaSqStarting_o);
+                Rprintf("tausq %3.2f\n", tauSqStarting_r);                
+
 				// eps: residuals from 1 to NumObs+1
-                spLM(eps+1, NumObs, coordsD_r, sigmaSqIG_r, tauSqIG_r, nuUnif_r, phiUnif_r, phiStarting_r,  sigmaSqStarting_r, tauSqStarting_r,  nuStarting_r,
+                spLM(eps+1, NumObs, coordsD_r, sigmaSqIG_r, tauSqIG_r, nuUnif_r, phiUnif_r, phiStarting_o,  sigmaSqStarting_o, tauSqStarting_r,  nuStarting_o,
                         phiTuning_r, sigmaSqTuning_r,  tauSqTuning_r,  nuTuning_r, nugget_r,  covModel,  amcmc_r, nBatch_r,  batchLength_r,  acceptRate_r,
                          nParams, sigmaSqIndx, tauSqIndx, phiIndx, nuIndx, 
                         *verbose,  nReport_r, spdraw, spParams);
-                Rprintf("%3.2f\n", spdraw[0]);
-                Rprintf("%3.2f\n", eps[0]);
-                
-                Rprintf("%3.2f\n", eps[1]);
+                Rprintf("phi %3.2f\n", *phiStarting_o);
 
 				F77_CALL(daxpy)(&NumObs,&mone,spdraw,&inc,eps+1,&inc); //subtract spdraw from eps                
-                Rprintf("%3.2f\n", eps[1]);
-				
+				//draw tausq
 				sd.setData(NumObs,eps);
 				sd.drawPost();
 				mu.setSigma(sd.getS());
+				tauSqStarting_r = mu.getSigma2();
+				spParams[tauSqIndx] = tauSqStarting_r;
+				Rprintf("spParams phi %3.2f\n", spParams[2]);				
+				Rprintf("spParams simasq %3.2f\n", spParams[0]);
 			}
 			if(binary) {
 				double u,Z;
@@ -577,7 +582,8 @@ extern "C" {
 				if(!binary) sdraw[scnt] = sd.getS();
 				scnt++;
 				countVarUsage(theTrees,varcnt);
-				for(int i=1; i<=NumX; i++) {
+		
+		        for(int i=1; i<=NumX; i++) {
 					vcdraw[vcnt] = varcnt[i];
 					vcnt++;
 				}
@@ -585,8 +591,8 @@ extern "C" {
 					tsdraw[sdnt] = theTrees[i]->NumBotNodes();
 					sdnt++;
 				}
-                for(int i=i; i<nParams; i++) {
-                    spdraw[spnt] = spParams[i];
+                for(int i=0; i<nParams; i++) {
+                    sppdraw[spnt] = spParams[i];
                     spnt++;
                 }
 			}
